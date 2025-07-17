@@ -105,14 +105,27 @@ format_fiat = lambda amount, currency: f"{amount:.2f} {currency}"
 
 
 # ================ HELPER MACROS OFFER REPOSITORY================
+
+"""*************************************************************************************************************
+/*	function name:		    parse_date
+* 	function inputs:	    value of the key type str.
+* 	function outputs:	    date
+* 	function description:	turn the str to datetime object 
+*   call back:              n/a
+*/
+*************************************************************************************************************"""
 def parse_date(date_str, end_of_day=False):
-    """Macro لتحويل التاريخ"""
+    #validate if there str value
     if not date_str:
         return None
     try:
+        #transfer the str to datetime object
         date = datetime.strptime(date_str, '%Y-%m-%d')
+        #configure time zone needed by django
         date = timezone.make_aware(date)
+        #if the filter is end date
         if end_of_day:
+            #instead of 00:00:00
             date = date.replace(hour=23, minute=59, second=59)
         return date
     except ValueError:
@@ -152,8 +165,7 @@ CREATE_WALLET = lambda user_id, currency: Wallet.objects.get_or_create(
 # ================ HELPER MACROS PROFILE================
 
 # Profile stats helpers
-#CALCULATE_COMPLETION_RATE = lambda completed, total: (completed / total * 100) if total > 0 else 100.0
-#CALCULATE_POSITIVE_RATE = lambda positive, total: (positive / total * 100) if total > 0 else 100.0
+
 FORMAT_PERCENTAGE = lambda value: f"{value:.2f}%"
 FORMAT_TIME = lambda minutes: f"{minutes:.2f} Minute(s)"
 

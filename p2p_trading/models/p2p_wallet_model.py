@@ -1,3 +1,12 @@
+"""*************************************************************************************************************
+                                                file Card
+*	project name:			P2P_trading.py
+*	file name:			    wallet_model.py
+*	project description:	set the implementation of the wallet model for this project
+*  start date:				Jul 14, 2025
+*  Author: 				    Eng. Amal Aly
+*************************************************************************************************************"""
+
 # p2p_trading/models/wallet_model.py
 from django.db import models
 
@@ -8,7 +17,8 @@ from .p2p_BaseModel import BaseModel
 
 class Wallet(BaseModel):
     user_id = models.IntegerField(db_index=True)
-    currency = models.CharField(max_length=10) # 'USDT', 'BTC', 'EGP'
+    #the crypto amount
+    currency = models.CharField(max_length=10)
     balance = models.DecimalField(max_digits=20, decimal_places=8, default=0)
     locked_balance = models.DecimalField(max_digits=20, decimal_places=8, default=0)
 

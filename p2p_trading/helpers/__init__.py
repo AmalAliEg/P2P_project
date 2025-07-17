@@ -8,10 +8,10 @@ from .p2p_decorator_helpers import (handle_exception)
 
 # Filter helpers
 from .p2p_filter_helpers import (extract_filters, FILTER_MAPPING, apply_filters, ORDER_FILTER_MAP, USER_FILTER,
-                                 BUY_FILTER, SELL_FILTER, apply_order_filters)
+                                 apply_order_filters)
 
 # Validation helpers
-from .p2p_validation_helpers import (validate_and_raise, validate_payment_methods, OfferValidator, VALIDATE_PERMISSION)
+from .p2p_validation_helpers import (validate_and_raise, validate_payment_methods, OfferValidator)
 
 from .p2p_macro_helpers import (
     get_decimal,
@@ -46,8 +46,6 @@ from .p2p_macro_helpers import (
     GET_BUYER_ID,
     GET_SELLER_ID,
 
-    CALCULATE_COMPLETION_RATE,
-    CALCULATE_POSITIVE_RATE ,
     FORMAT_PERCENTAGE,
     FORMAT_TIME,
 
@@ -70,7 +68,6 @@ __all__ = [
     'validate_and_raise',
     'validate_payment_methods',
     'OfferValidator',
-    'VALIDATE_PERMISSION',
 
     # Macros
     'get_decimal',
@@ -96,8 +93,7 @@ __all__ = [
 
     'ORDER_FILTER_MAP',
     'USER_FILTER',
-    'BUY_FILTER',
-    'SELL_FILTER',
+
     'apply_order_filters',
     'STATUS_TIME_FIELDS',
 
@@ -111,8 +107,7 @@ __all__ = [
     'GET_BUYER_ID',
     'GET_SELLER_ID',
 
-    'CALCULATE_COMPLETION_RATE',
-    'CALCULATE_POSITIVE_RATE' ,
+
     'FORMAT_PERCENTAGE',
     'FORMAT_TIME',
 

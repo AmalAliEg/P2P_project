@@ -87,22 +87,29 @@ class P2PProfileRepository:
         method.save()
         return method
 
+    """*************************************************************************************************************
+    /*	function name:		    validate_payment_methods_ownership
+    * 	function inputs:	    user id from the payment_method_ids the attri in the offer model
+    * 	function outputs:	    error_message or TRUE
+    * 	function description:	check the ownership of the payment method by the user from the MainDashboard
+    *   call back:              ValidationError() from rest.framework library
+    */
+    *************************************************************************************************************"""
     @staticmethod
     def validate_payment_methods_ownership(user_id, payment_ids):
-        """check the ownership of the payment method from the MainDashboard"""
 
         if not payment_ids:
             return True
 
-        # get the payment method for the user
+        # get the payment method for the user from the payment-method model in the main- dashboard
         user_methods = PaymentMethods.objects.filter(
-            user_id=user_id,
+            user__id=user_id,
             id__in=payment_ids
         ).values_list('id', flat=True)
 
-        # get all missing  IDs
+        # get all missing  IDs in set
         missing_ids = set(payment_ids) - set(user_methods)
-
+        #raise error with the wrong id's
         validate_and_raise(
             bool(missing_ids),  # condition
             f'Payment methods {list(missing_ids)} do not exist or do not belong to you',

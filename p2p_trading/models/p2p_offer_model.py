@@ -25,13 +25,20 @@ class P2POffer(BaseModel):
                                        help_text="Percentage margin for floating price (e.g., 5.00 for +5%")
 
     # amounts and limits
+    #total amount in crypto
     total_amount = models.DecimalField(max_digits=20, decimal_places=8, validators=[MinValueValidator(Decimal('0.00001'))])
+    #change after each order
     available_amount = models.DecimalField(max_digits=20, decimal_places=8, validators=[MinValueValidator(Decimal('0'))])
     min_order_limit = models.DecimalField(max_digits=20, decimal_places=2,validators=[MinValueValidator(Decimal('0.01'))])
     max_order_limit = models.DecimalField(max_digits=20, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
 
 
     #payment method in the main dashboard
+    '''JSONField means it can be:
+    payment_method_ids = "text"
+    payment_method_ids = {"key": "value"}
+    payment_method_ids = []
+    payment_method_ids = ["abc", "xyz"]'''
     payment_method_ids = models.JSONField(default=list)
 
     payment_time_limit_minutes = models.IntegerField(default=15,

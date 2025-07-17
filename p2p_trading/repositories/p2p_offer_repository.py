@@ -3,17 +3,20 @@
 from ..constants.constant import OfferStatus
 from ..models.p2p_offer_model import P2POffer
 from ..models.p2p_profile_models import  P2PProfile
+from MainDashboard.models import PaymentMethods
 
 # ================ HELPER MACROS ================
 from ..helpers import (get_or_404,
                        get_or_403,
-                       apply_filters)
+                       apply_filters,
+                       handle_exception)
 
 # ================ REPOSITORY CLASS ================
 class P2POfferRepository:
     # Base queries
-    BASE_QUERY = P2POffer.objects.filter(is_deleted=False)
-    PUBLIC_QUERY = BASE_QUERY.filter(status=OfferStatus.ACTIVE, available_amount__gt=0)
+    #filter according to the is_deleted , all records that not deleted from the database
+    NON_DELETED_OFFERS = P2POffer.objects.filter(is_deleted=False)
+    PUBLIC_QUERY = NON_DELETED_OFFERS.filter(status=OfferStatus.ACTIVE, available_amount__gt=0)
 
     @staticmethod
     def create_offer(data):
@@ -42,10 +45,20 @@ class P2POfferRepository:
         offer.user_profile = P2PProfile.objects.filter(user_id=offer.user_id).first()
         return offer
 
+
+    """*************************************************************************************************************
+    /*	function name:		    get_by_user_and_filters
+    * 	function inputs:	    user id, filters
+    * 	function outputs:	    instance of the offer model ordered by creation date 
+    * 	function description:	get queryset of the non-deleted offers, and apply the filters to the model
+    *   call back:              n/a
+    */
+    *************************************************************************************************************"""
     @staticmethod
     def get_by_user_and_filters(user_id, filters):
-        """جلب عروض المستخدم مع الفلاتر"""
-        queryset = P2POfferRepository.BASE_QUERY.filter(user_id=user_id)
+        """get the offers of the user using filters"""
+        #get the all the active offers for the user
+        queryset = P2POfferRepository.NON_DELETED_OFFERS.filter(user_id=user_id)
         queryset = apply_filters(queryset, filters)
         return queryset.order_by('-created_at')
 
@@ -78,19 +91,29 @@ class P2POfferRepository:
         offer.save(update_fields=['is_deleted', 'status'])
         return offer
 
+    """*************************************************************************************************************
+    review
+    /*	function name:		    get_payment_methods_details
+    * 	function inputs:	    list of unique_ids
+    * 	function outputs:	    set of payment_map 
+    * 	function description:	get the details of the payment method from the main-dashboard according to the id
+    *   call back:              get_offer_detail(),  P2POfferDetailSerializer()
+    */
+    *************************************************************************************************************"""
     @staticmethod
     def get_payment_methods_details(payment_ids):
-        """get the details of the payment method fro the  main_db"""
         if not payment_ids:
             return {}
-
         try:
-            from MainDashboard.models import PaymentMethods
+            #filter based on id if included in payment_ids and return list of dict.
             payment_methods = PaymentMethods.objects.using('main_db').filter(
                 id__in=payment_ids
             ).values('id', 'type', 'holder_name', 'number', 'payment_method_id')
 
+            #empty dict.
             payment_map = {}
+            #loop over list of dict.
+            #validate if the id/record has value of type, holder_name,number
             for pm in payment_methods:
                 display_name = pm['type'] or 'Unknown'
                 if pm.get('holder_name'):
@@ -98,6 +121,7 @@ class P2POfferRepository:
                 elif pm.get('number') and len(pm['number']) > 4:
                     display_name = f"{pm['type']} (****{pm['number'][-4:]})"
 
+                #append the dict ,
                 payment_map[pm['id']] = {
                     'id': pm['id'],
                     'type': pm['type'],

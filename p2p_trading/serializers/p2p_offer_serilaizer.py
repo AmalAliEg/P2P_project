@@ -35,7 +35,18 @@ class BaseOfferSerializer(serializers.ModelSerializer):
         }
 
 # ================ CREATE SERIALIZER ================
+
+
+"""*************************************************************************************************************
+/*	class name:		        P2POfferCreateSerializer
+* 	class outputs:	
+* 	class description:	    
+*/
+*************************************************************************************************************"""
 class P2POfferCreateSerializer(serializers.ModelSerializer):
+
+    #it restrict the format of the payment_methods_id to be only list
+    #  payment_method_ids = []
     payment_method_ids = serializers.ListField(
         child=serializers.IntegerField(),
         allow_empty=False
@@ -43,6 +54,7 @@ class P2POfferCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = P2POffer
+        #all fields required, but only price_margin,payment_method_ids,auto_reply_message optional
         fields = [
             'trade_type', 'crypto_currency', 'fiat_currency', 'price_type', 'price',
             'price_margin', 'total_amount', 'min_order_limit', 'max_order_limit',
@@ -69,7 +81,8 @@ class P2POfferListSerializer(BaseOfferSerializer):
 
         # update the values of the statistics attr.
         data.update({
-            'ad_number': str(instance.id).replace('-', '')[:8].upper(),
+
+            'offer_no': str(instance.id).replace('-', '')[:8].upper(),
             'total_amount_display': format_currency(instance.total_amount, instance.crypto_currency),
             'price_display': self._get_price_display(instance),
             'completed_rate': self._calculate_completion_rate(instance),
@@ -78,6 +91,14 @@ class P2POfferListSerializer(BaseOfferSerializer):
 
         return data
 
+    """*************************************************************************************************************
+     /*	function name:		    _get_price_display
+     * 	function inputs:	    instance
+     * 	function outputs:	    return price_margin
+     * 	function description:	return price if the price type is floating 
+     *   call back:              n/a
+     */
+     *************************************************************************************************************"""
     def _get_price_display(self, obj):
         """update the price based on price-type fixed or float"""
         if obj.price_type == PriceType.FIXED:

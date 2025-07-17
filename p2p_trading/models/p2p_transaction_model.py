@@ -1,3 +1,12 @@
+"""*************************************************************************************************************
+                                                file Card
+*	project name:			P2P_trading.py
+*	file name:			    transaction_model.py
+*	project description:	set the implementation of the transaction model for this project
+*  start date:				Jul 14, 2025
+*  Author: 				    Eng. Amal Aly
+*************************************************************************************************************"""
+
 # p2p_trading/models/transaction_model.py
 from django.db import models
 

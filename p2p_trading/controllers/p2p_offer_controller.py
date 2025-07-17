@@ -20,27 +20,57 @@ from ..helpers import (
     extract_filters
 )
 # ================ CONTROLLER CLASS ================
+
+"""*************************************************************************************************************
+/*	class name:		    P2POfferController
+ * 	class  description:	
+ */
+*************************************************************************************************************"""
+
 class P2POfferController(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
+    #common object from the class, thus all function can use it
     service = P2POfferService()
 
-    # 1. Create new offer
+    """*************************************************************************************************************
+    /*	function name:		    create
+    * 	function inputs:	    request from the front end 
+    * 	function outputs:	
+    * 	function description:	create new offer 
+    *   call back:              create_offer(),  P2POfferCreateSerializer()
+    * 	API format:             POST: /api/p2p/offers/
+    */
+    *************************************************************************************************************"""
     @handle_exception
     def create(self, request):
-        print(f"Request data: {request.data}")
-        print(f"User ID: {request.user.id}")
 
+        # print(f"Request data: {request.data}")
+        # print(f"User ID: {request.user.id}")
+
+        #instance from the offer model
         offer = self.service.create_offer(user_id=request.user.id, data=request.data)
+        #instance of the P2POfferCreateSerializer
         serializer = P2POfferCreateSerializer(offer)
         return success_response(serializer.data, status_code=status.HTTP_201_CREATED)
 
-    # 2. List "My Offers"
+    """*************************************************************************************************************
+    /*	function name:		list
+    * 	function inputs:	request from the front end 
+    * 	function outputs:	
+    * 	function description:	list my offers of the user in the front end page according to filters 
+                                ['status', 'type', 'asset_type', 'start_date', 'end_date']
+    * 	API format:     GET: /api/p2p/offers/
+                        GET: /api/p2p/offers/?status=active&type=buy
+                        GET: /api/p2p/offers/?status=active&type=sell&asset_type=USDT
+                        etc
+    */
+    *************************************************************************************************************"""
     @handle_exception
     def list(self, request):
-        # apply filters
+        # apply filters from the front end
         filters = extract_filters(request.query_params,
                                   ['status', 'type', 'asset_type', 'start_date', 'end_date'])
-        # get the offers
+        # get the offers according to those filters
         offers = self.service.get_user_offers(user_id=request.user.id, filters=filters)
 
         # get payment method details
@@ -55,14 +85,29 @@ class P2POfferController(viewsets.ViewSet):
         count = offers.count() if hasattr(offers, 'count') else len(offers)
         return success_response(data=serializer.data, count=count)
 
-    # 3. Show offer details
+    """*************************************************************************************************************
+    /*	function name:		    retrieve
+    * 	function inputs:	    request from the front end 
+    * 	function outputs:	
+    * 	function description:	in each reactangle in the front end it show the details of the offer 
+    *   call back:              get_offer_detail(),  P2POfferDetailSerializer()
+    * 	API format:             GET: /api/p2p/offers/{id}
+    */
+    *************************************************************************************************************"""
     @handle_exception
     def retrieve(self, request, pk=None):
         offer = self.service.get_offer_detail(user_id=request.user.id, offer_id=pk)
         serializer = P2POfferDetailSerializer(offer)
         return success_response(serializer.data)
 
-    # 4. Update offer
+    """*************************************************************************************************************
+    /*	function name:		update 
+    * 	function inputs:	request from the front end 
+    * 	function outputs:	
+    * 	function description:	update exist offer 
+    * 	API format:     PUT: /api/p2p/offers/
+    */
+    *************************************************************************************************************"""
     @handle_exception
     def update(self, request, pk=None):
         #validate
@@ -76,7 +121,7 @@ class P2POfferController(viewsets.ViewSet):
             data=serializer.validated_data
         )
 
-        # جلب تفاصيل طرق الدفع
+        # get the details of the payment
         payment_details_map = self.service.get_payment_methods_for_single_offer(offer)
 
         # Response
