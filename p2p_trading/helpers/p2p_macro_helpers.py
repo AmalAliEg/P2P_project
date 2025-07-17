@@ -152,8 +152,8 @@ CREATE_WALLET = lambda user_id, currency: Wallet.objects.get_or_create(
 # ================ HELPER MACROS PROFILE================
 
 # Profile stats helpers
-CALCULATE_COMPLETION_RATE = lambda completed, total: (completed / total * 100) if total > 0 else 100.0
-CALCULATE_POSITIVE_RATE = lambda positive, total: (positive / total * 100) if total > 0 else 100.0
+#CALCULATE_COMPLETION_RATE = lambda completed, total: (completed / total * 100) if total > 0 else 100.0
+#CALCULATE_POSITIVE_RATE = lambda positive, total: (positive / total * 100) if total > 0 else 100.0
 FORMAT_PERCENTAGE = lambda value: f"{value:.2f}%"
 FORMAT_TIME = lambda minutes: f"{minutes:.2f} Minute(s)"
 

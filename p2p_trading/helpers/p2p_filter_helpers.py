@@ -27,8 +27,6 @@ FILTER_MAPPING = {
 
 # Macros for common patterns
 USER_FILTER = lambda user_id: Q(maker_id=user_id) | Q(taker_id=user_id)
-BUY_FILTER = lambda user_id: Q(trade_type='SELL', taker_id=user_id) | Q(trade_type='BUY', maker_id=user_id)
-SELL_FILTER = lambda user_id: Q(trade_type='SELL', maker_id=user_id) | Q(trade_type='BUY', taker_id=user_id)
 
 
 ORDER_FILTER_MAP = {

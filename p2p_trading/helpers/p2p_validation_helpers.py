@@ -16,7 +16,7 @@ def validate_and_raise(condition, error_message, field=None):
         raise ValidationError(error)
 
 def validate_payment_methods(payment_ids):
-    """التحقق من تنسيق قائمة طرق الدفع فقط"""
+    """validate payment methods format"""
     if not payment_ids:
         return True
 
@@ -89,5 +89,4 @@ class OfferValidator:
                 f"Cannot delete offer with active trades. {sold} already sold."
             )
 
-# ================ HELPER MACROS ORDER SERVICE================
-VALIDATE_PERMISSION = lambda condition, msg: validate_and_raise(condition, msg) if condition else None
+
