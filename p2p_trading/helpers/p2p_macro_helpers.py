@@ -82,6 +82,7 @@ VALIDATE_BALANCE = lambda wallet, amount, balance_type='balance': (
 
 
 # ================ HELPER MACROS OFFER SERIALIZER================
+#used to format the currencies
 def format_currency(amount, currency, decimals=8):
     """Macro"""
     return f"{amount:.{decimals}f} {currency}"

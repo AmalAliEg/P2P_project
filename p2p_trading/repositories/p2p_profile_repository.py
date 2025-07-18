@@ -6,7 +6,7 @@ from ..models import P2PProfile
 from ..helpers import get_or_403, validate_and_raise
 from MainDashboard.models import PaymentMethods,MainUser
 
-# Macros
+#used to get the
 GET_OR_CREATE_PROFILE = lambda user_id: P2PProfile.objects.get_or_create(
     user_id=user_id,
     defaults={'nickname': f'P2P-{user_id[:8]}' if isinstance(user_id, str) else f'P2P-user-{user_id}'}
@@ -17,19 +17,38 @@ class P2PProfileRepository:
 
     @staticmethod
     def get_user_data(user_id):
-        """get the data from the MainUser"""
+        """
+        function to get the data from the MainUser fron the main dashboard
+        args:
+            user_id (int): user id
+        return:
+            dict: user data
+        """
+        #filter the MainUser using the user_id and get first match and only the 'username' field
         return MainUser.objects.filter(id=user_id).values(
             'username'
         ).first()
 
     @staticmethod
     def is_nickname_taken(nickname):
-        """validate the nickname avai. """
+        """
+        validate the nickname availabilty .
+        args:
+            nickname (str): nickname
+        return:
+            bool
+        """
         return P2PProfile.objects.filter(nickname=nickname).exists()
 
     @staticmethod
     def get_profile_counts(profile):
-        """metrix of the user"""
+        """
+        get the counts or metrix of the user
+        args:
+            profile (P2PProfile): user profile
+        return:
+            dict: counts
+        """
         return {
             'payment_methods_count': profile.payment_methods.filter(is_active=True).count(),
             'feedback_count': profile.received_feedback.count(),
@@ -40,8 +59,28 @@ class P2PProfileRepository:
 
     @staticmethod
     def get_or_create_profile(user_id):
-        """get or create the profile from id """
-        return GET_OR_CREATE_PROFILE(user_id)
+        """
+        function to get or create the profile from id
+        args:
+        user_id: user id
+        returns:
+        profile: profile overview
+        """
+        # Generate default nickname
+        #validate that user_id is str type
+        if isinstance(user_id, str):
+            #generate default nikename is "P2P-first 8 char in the user_id"
+            default_nickname = f'P2P-{user_id[:8]}'
+        else:
+            #generate default nikename is "P2P-user- user_id"
+            default_nickname = f'P2P-user-{user_id}'
+        #get or create the profile
+        profile, created = P2PProfile.objects.get_or_create(
+            user_id=user_id,
+            defaults={'nickname': default_nickname}
+        )
+
+        return profile
 
     """*************************************************************************************************************
     /*	function name:		    get_profiles_by_user_ids
@@ -58,21 +97,47 @@ class P2PProfileRepository:
 
     @staticmethod
     def update_profile(profile, **kwargs):
-        """update the profile"""
+        """
+        update the profile
+        args:
+            profile (P2PProfile): user profile
+        return:
+            None
+
+        """
+        #loop over the fields
         for key, value in kwargs.items():
             setattr(profile, key, value)
+        #retrun object from the profile with the edited fileds
         profile.save()
         return profile
 
     @staticmethod
     def get_payment_methods(profile, active_only=True):
-        """get list of payment methods"""
-
-        return PaymentMethods.objects.filter(user_id=profile.user_id)
+        """
+        get list of payment methods
+        args:
+            profile (P2PProfile): user profile
+            active_only (bool):
+        return:
+            list: payment methods
+        """
+        queryset=PaymentMethods.objects.filter(user_id=profile.user_id)
+        if active_only:
+            queryset=queryset.filter(is_active=True)
+        return queryset
 
 
     @staticmethod
     def add_payment_method_to_main(user_id, method_data):
+        """
+        add payment method data to main dashboard
+        args:
+            method_data (dict): payment method data
+        return:
+            None
+
+        """
 
         # Access the payment method model direct
         payment_method = PaymentMethods.objects.create(
@@ -88,10 +153,20 @@ class P2PProfileRepository:
 
     @staticmethod
     def update_payment_method(method_id, profile, **kwargs):
-        """update payment method"""
+        """
+        update payment method
+        args:
+            method_id (str): payment method id
+            profile (P2PProfile): user profile
+        return:
+            None
+        """
+
         method = get_or_403(PaymentMethods, id=method_id, user_id=profile.user_id)
+        #loop over updated fields
         for key, value in kwargs.items():
             setattr(method, key, value)
+        #get the object of the payment method
         method.save()
         return method
 

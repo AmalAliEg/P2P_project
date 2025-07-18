@@ -138,13 +138,15 @@ class P2POrderRepository:
 
         return order
 
-    @staticmethod
+
+    """it will be used for the chat"""
+    '''@staticmethod
     def link_chat_room_to_order(order, room_id):
         """link the room id with the order"""
         """it will be used in future """
         order.chat_room_id = room_id
         order.save(update_fields=['chat_room_id'])
-
+'''
 
 
 
