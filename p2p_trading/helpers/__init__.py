@@ -20,7 +20,6 @@ from .p2p_macro_helpers import (
     get_user_display_name,
     format_currency,
     get_or_403,
-    get_or_404,
     parse_date,
 
     format_price,
@@ -76,7 +75,6 @@ __all__ = [
     'get_profile_stats',
     'get_user_display_name',
     'get_or_403',
-    'get_or_404',
     'parse_date',
 
     'format_price',

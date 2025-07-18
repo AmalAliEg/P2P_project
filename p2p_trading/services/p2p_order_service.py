@@ -31,16 +31,27 @@ class P2POrderService:
 
     @staticmethod
     def create_order_from_offer(taker_id, data):
+        """
+        Create a new P2P order from an existing offer
+
+        args:
+            taker_id (int): ID of the user accepting the offer
+            data (dict): Request data
+
+        returns:
+            P2POrder: The created order instance with locked funds
+        """
         # validate the data
         serializer = P2POrderCreateSerializer(data=data)
         validate_and_raise(not serializer.is_valid(), serializer.errors)
 
-        # get the order
-        offer = REPO['offer'].get_by_id(data['offer_id'])
+        # get the instance of offer
+        offer = REPO['offer'].get_by_id_and_owner(data['offer_id'],taker_id)
+
         fiat_amount = serializer.validated_data['fiat_amount']
         crypto_amount = fiat_amount / offer.price
 
-        # validate the data before creation
+        # validate the data before creation by adding all the validations in list
         validations = [
             (offer.status != 'ACTIVE', "This offer is not active"),
             (offer.user_id == taker_id, "You cannot take your own offer"),
@@ -48,7 +59,7 @@ class P2POrderService:
             (fiat_amount > offer.max_order_limit, f"Maximum order is {offer.max_order_limit} {offer.fiat_currency}"),
             (crypto_amount > offer.available_amount, "Insufficient available amount")
         ]
-
+        #loop over the validations list
         for condition, error in validations:
             validate_and_raise(condition, error)
 
@@ -63,10 +74,8 @@ class P2POrderService:
             'payment_time_limit': PAYMENT_DEADLINE(offer.payment_time_limit_minutes),
             'status': OrderStatus.UNPAID
         }
-
         order = REPO['order'].create_order(offer, taker_id, order_data)
-
-        # lock the crypto
+        # lock the crypto-escrow concept began
         try:
             WalletService.lock_funds_for_order(order)
         except ValueError as e:
@@ -77,57 +86,96 @@ class P2POrderService:
 
     @staticmethod
     def get_processing_orders(user_id, filters):
-        """list the processing orders"""
+        """
+        list the processing orders for that user
+        args:
+            user_id (int): ID of the user
+            filters (dict): Filters data
+        returns:
+            list: List of processing orders
+        """
         return REPO['order'].get_orders_for_user(user_id, filters, PROCESSING_STATUSES)
 
     @staticmethod
     def get_historical_orders(user_id, filters):
-        """get the canceled or the completed orders"""
+        """
+        get the canceled or the completed orders for the user
+        args:
+            user_id (int): ID of the user
+            filters (dict): Filters data
+        returns:
+            list: List of canceled or completed orders
+        """
+
         return REPO['order'].get_orders_for_user(user_id, filters, COMPLETED_STATUSES)
 
     @staticmethod
     def mark_order_as_paid(user_id, order_id):
-        """mark-as-paid , it should be done by the buyer """
+        """mark-as-paid , it should be done by the buyer
+        args:
+            user_id (int): ID of the user
+            order_id (int): ID of the order
+        returns:
+            bool: True if marked as paid
+
+        """
         print(f"Service - mark_as_paid: user_id={user_id}, order_id={order_id}")  # debugging
 
-        try:
-            order = REPO['order'].get_by_id(order_id)
+        order = REPO['order'].get_by_id(order_id)
+        print(f"Found order: {order.id}, taker_id: {order.taker_id}, status: {order.status}")  # debugging
 
-            print(f"Found order: {order.id}, taker_id: {order.taker_id}, status: {order.status}")  # debugging
+        # validate that the user is seller
+        validate_and_raise(
+            GET_BUYER_ID(order) != user_id,
+            "Only buyer can mark order as paid"
+        )
+
+        #validate that the order status is paid
+        validate_and_raise(
+            order.status != OrderStatus.UNPAID,
+            "Order is not in unpaid status",
+            field='status'
+        )
+
+        #validate the time
+        validate_and_raise(
+            timezone.now() > order.payment_time_limit,
+            "Payment time has expired",
+            field='payment_time'
+        )
+
+        print(f"About to update order status to PAID")  # just for debugging
+        #update the status of the  order
+        updated_order = REPO['order'].update_order_status(order, OrderStatus.PAID)
+        print(f"Order updated successfully: {updated_order.status}")  # just for debugging
+        return updated_order
 
 
-            validations = [
-                # validate that the user is seller
-                (GET_BUYER_ID(order)  != user_id, PermissionDenied("Only buyer can mark order as paid")),
-                (order.status != OrderStatus.UNPAID, ValidationError("Order is not in unpaid status")),
-                (timezone.now() > order.payment_time_limit, ValidationError("Payment time has expired"))
-            ]
-
-            for condition, error in validations:
-                if condition: raise error
-
-            print(f"About to update order status to PAID")  # just for debugging
-            updated_order = REPO['order'].update_order_status(order, OrderStatus.PAID)
-            print(f"Order updated successfully: {updated_order.status}")  # just for debugging
-
-            return updated_order
-
-        except Exception as e:
-            print(f"Error in mark_order_as_paid: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            raise
 
     @staticmethod
     def confirm_payment_received(user_id, order_id):
-        """confirm receive money, it should be done by the seller"""
+        """
+        confirm receive money, it should be done by the seller
+        args:
+            user_id (int): ID of the user
+            order_id (int): ID of the order
+        returns:
+            bool: True if confirmed, else False
+
+        """
         order = REPO['order'].get_by_id(order_id)
 
         # validate if user is the buyer
-        if GET_SELLER_ID(order) != user_id:
-            raise PermissionDenied("Only seller can confirm payment")
-        if order.status != OrderStatus.PAID:
-            raise ValidationError("Order is not marked as paid")
+        validate_and_raise(
+            GET_BUYER_ID(order) != user_id,
+            "Only seller can confirm payment"
+        )
+        #validate that the order status is unpaid
+        validate_and_raise(
+            order.status != OrderStatus.PAID,
+            "Order is not marked as paid",
+            field='status'
+        )
 
         # update the status and release the crypto
         order = REPO['order'].update_order_status(order, OrderStatus.COMPLETED)
@@ -136,22 +184,35 @@ class P2POrderService:
 
     @staticmethod
     def cancel_order(user_id, order_id):
-        """cancel the order """
+        """this function handle the logic to cancel the order
+        args:
+            user_id (int): ID of the user
+            order_id (int): ID of the order
+        returns:
+            bool: True if canceled, else False
+        """
         order = REPO['order'].get_by_id(order_id)
 
         # validation
-        if order.maker_id != user_id and order.taker_id != user_id:
-            raise PermissionDenied("You are not part of this order")
-        if order.status in [OrderStatus.COMPLETED, OrderStatus.CANCELLED]:
-            raise ValidationError("Cannot cancel this order")
+        validate_and_raise(
+            order.maker_id != user_id,
+            "You are not part of this order"
+        )
 
-        # update status to CANCEL
+        validate_and_raise(
+            order.status in COMPLETED_STATUSES,
+            "Cannot cancel this order"
+        )
+
+        #use it to make sure that below logic dealed as one block
         with transaction.atomic():
+            # update status to CANCEL
             order = REPO['order'].update_order_status(order, OrderStatus.CANCELLED)
 
-            # edit the avail. amount of the offer back again
+            # edit the avail. amount of the offer back to the offer again
             offer = order.offer
             offer.available_amount += order.crypto_amount
+            #if the status of the offer was completed, return it back to active
             if offer.status == 'COMPLETED':
                 offer.status = 'ACTIVE'
             offer.save()
@@ -163,7 +224,14 @@ class P2POrderService:
 
     @staticmethod
     def get_order_detail(user_id, order_id):
-        """get the order detail for the user"""
+        """
+        get the order detail for the user
+        args:
+            user_id (int): ID of the user
+            order_id (int): ID of the order
+        returns:
+            dict: Order details
+        """
         order = REPO['order'].get_by_id(order_id)
         #validaion if the user is taker or maker
         if order.maker_id != user_id and order.taker_id != user_id:

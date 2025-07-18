@@ -3,7 +3,7 @@ import time
 
 from ..models import P2PProfile
 
-from ..helpers import get_or_404, validate_and_raise
+from ..helpers import get_or_403, validate_and_raise
 from MainDashboard.models import PaymentMethods,MainUser
 
 # Macros
@@ -89,7 +89,7 @@ class P2PProfileRepository:
     @staticmethod
     def update_payment_method(method_id, profile, **kwargs):
         """update payment method"""
-        method = get_or_404(PaymentMethods, id=method_id, user_id=profile.user_id)
+        method = get_or_403(PaymentMethods, id=method_id, user_id=profile.user_id)
         for key, value in kwargs.items():
             setattr(method, key, value)
         method.save()
@@ -136,7 +136,7 @@ class P2PProfileRepository:
     @staticmethod
     def delete_payment_method(method_id, profile):
         """ (soft delete)"""
-        method = get_or_404(PaymentMethods, id=method_id, user_id=profile.user_id)
+        method = get_or_403(PaymentMethods, id=method_id, user_id=profile.user_id)
         method.delete()
         return method
 

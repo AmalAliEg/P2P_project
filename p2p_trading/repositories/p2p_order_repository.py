@@ -12,6 +12,7 @@ from ..constants.constant import  OfferStatus
 from ..helpers import (ORDER_FILTER_MAP,
                        STATUS_TIME_FIELDS,
                        USER_FILTER,
+                       get_or_403
                        )
 
 
@@ -21,19 +22,43 @@ class P2POrderRepository:
 
     @staticmethod
     def get_by_id(order_id):
-        """get one order using the ID"""
-        print(f"Repository - get_by_id: order_id={order_id}")  # debugging
-        try:
-            order = P2POrder.objects.select_related('offer').get(id=order_id, is_deleted=False)
-            print(f"Found order in DB: {order}")  # debugging
-            return order
-        except P2POrder.DoesNotExist:
-            print(f"Order not found with ID: {order_id}")  # debugging
-            raise NotFound("Order not found.")
+        """
+        get one order using the ID
+        args:
+            order_id: order ID
+        returns:
+            Order details
+
+        """
+
+        return get_or_403(
+            P2POrder,
+            "Order not found.",
+            id=order_id,
+            is_deleted=False
+        )
+        # print(f"Repository - get_by_id: order_id={order_id}")  # debugging
+        # try:
+        #     order = P2POrder.objects.select_related('offer').get(id=order_id, is_deleted=False)
+        #     print(f"Found order in DB: {order}")  # debugging
+        #     return order
+        # except P2POrder.DoesNotExist:
+        #     print(f"Order not found with ID: {order_id}")  # debugging
+        #     raise NotFound("Order not found.")
 
     @staticmethod
     @transaction.atomic
     def create_order(offer, taker_id, order_data):
+        """
+        Create a new order and update the offer's available amount
+        args:
+            offer: P2POffer instance
+            taker_id: ID of user accepting the offer
+            order_data: Dictionary with order details
+        returns:
+            P2POrder: The created order instance
+
+        """
         # lock and validate the amount of the user
         offer_locked = P2POffer.objects.select_for_update().get(id=offer.id)
 
@@ -58,7 +83,16 @@ class P2POrderRepository:
 
     @staticmethod
     def get_orders_for_user(user_id, filters, status_list):
-        """get list of specific user"""
+        """
+          get queryset for the orders that user is taker or maker
+          args:
+            user_id: ID of user
+            filters: Filters to apply to the queryset
+            status_list: List of statuses to filter the queryset
+          returns:
+            Queryset
+
+        """
         queryset = P2POrder.objects.filter(
             USER_FILTER(user_id),
             status__in=status_list
@@ -72,14 +106,25 @@ class P2POrderRepository:
         return queryset
 
     @staticmethod
-    def update_order_status(order, new_status, user_id=None):
-        """update the order status and time"""
+    def update_order_status(order, new_status):
+        """
+        update the order status and time
+        args:
+
+        order: P2POrder instance
+        new_status: New order status
+
+        returns:
+        instance of order with updated status
+
+        """
         print(f"Updating order {order.id} status from {order.status} to {new_status}")  # just for debugging
+
 
         order.status = new_status
         update_fields = ['status']
 
-        # update time
+        # update time fields
         if new_status in STATUS_TIME_FIELDS:
             field_name, time_func = STATUS_TIME_FIELDS[new_status]
             setattr(order, field_name, time_func())
@@ -87,14 +132,9 @@ class P2POrderRepository:
 
         print(f"Update fields: {update_fields}")  # debugging
 
-        try:
-            order.save(update_fields=update_fields)
-            print(f"Order saved successfully. New status: {order.status}")  # debugging
-        except Exception as e:
-            print(f"Error saving order: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            raise
+        #create the instance and update the status
+        order.save(update_fields=update_fields)
+        print(f"Order saved successfully. New status: {order.status}")  # debugging
 
         return order
 

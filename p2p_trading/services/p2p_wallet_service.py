@@ -27,7 +27,14 @@ class WalletService:
     @staticmethod
     @db_transaction.atomic
     def lock_funds_for_order(order):
-        """lock crypto once there order"""
+        """
+            lock the crypto amount of funds
+            arg:
+                instance of the order
+            return:
+            locking the amount of funds in the wallet
+
+        """
         seller_id, _ = GET_SELLER_BUYER(order)
         wallet = WalletService.repo.get_or_create_wallet(seller_id, order.crypto_currency)
         amount = order.crypto_amount
@@ -75,9 +82,18 @@ class WalletService:
     @staticmethod
     @db_transaction.atomic
     def cancel_order_and_unlock_funds(order):
-        """cancel the order and unlock the wallet"""
+        """
+        this handle the logic to cancel the order and unlock the wallet
+        args:
+            instance of the order
+        return:
+            instance of the wallet
+        """
+        #get seller id , seller who need to get the currencies back
         seller_id, _ = GET_SELLER_BUYER(order)
+        #get the wallet of the seller
         wallet = WalletService.repo.get_or_create_wallet(seller_id, order.crypto_currency)
+        #the locked amount
         amount = order.crypto_amount
 
         # release the fund back

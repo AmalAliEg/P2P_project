@@ -51,7 +51,7 @@ class P2POrderListSerializer(serializers.ModelSerializer):
         }
 
     def get_counterparty(self, obj):
-        """معلومات الطرف الآخر"""
+        """get the counterparty"""
         counterparty_id = get_counterparty_id(obj, self.context['request'].user.id)
         try:
             return P2PProfile.objects.get(user_id=counterparty_id).nickname
@@ -61,4 +61,6 @@ class P2POrderListSerializer(serializers.ModelSerializer):
     def get_status_display(self, obj):
         """show the statuse of the order """
         return STATUS_MAP.get(obj.status, {'text': obj.status, 'class': 'default'})
+
+
 

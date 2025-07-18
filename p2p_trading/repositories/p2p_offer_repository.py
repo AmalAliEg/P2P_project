@@ -7,7 +7,7 @@ from ..models.p2p_profile_models import  P2PProfile
 from MainDashboard.models import PaymentMethods
 
 # ================ HELPER MACROS ================
-from ..helpers import (get_or_404,
+from ..helpers import (
                        get_or_403,
                        apply_filters,
                        )
@@ -140,8 +140,10 @@ class P2POfferRepository:
     review
     /*	function name:		    get_payment_methods_details
     * 	function inputs:	    list of unique_ids
-    * 	function outputs:	    set of payment_map 
+    * 	function outputs:	    Returns dict with formatted display names showing:
     * 	function description:	get the details of the payment method from the main-dashboard according to the id
+                                - Type + holder name if available
+                                - Type + last 4 digits if number availabl
     *   call back:              get_offer_detail(),  P2POfferDetailSerializer()
     */
     *************************************************************************************************************"""

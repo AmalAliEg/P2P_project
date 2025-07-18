@@ -35,7 +35,7 @@ FILTER_MAPPING = {
 
 # ================ HELPER MACROS ORDER REPOSITORY================
 
-# Macros for common patterns
+# filter if the user is taker or the maker for the order
 USER_FILTER = lambda user_id: Q(maker_id=user_id) | Q(taker_id=user_id)
 
 

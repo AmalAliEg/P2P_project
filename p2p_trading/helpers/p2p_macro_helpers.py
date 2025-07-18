@@ -60,7 +60,7 @@ def enrich_offers_with_profiles(offers, profile_model):
 
 
 # ================ HELPER MACROS ORDER SERVICES================
-# Order type helpers
+# if trade-type is sell
 GET_TAKER_TYPE = lambda offer_type: 'BUY' if offer_type == 'SELL' else 'SELL'
 
 # Time helpers
@@ -69,7 +69,7 @@ PAYMENT_DEADLINE = lambda minutes: timezone.now() + timezone.timedelta(minutes=m
 GET_BUYER_ID = lambda order: order.taker_id if order.trade_type == 'BUY' else order.maker_id
 GET_SELLER_ID = lambda order: order.maker_id if order.trade_type == 'BUY' else order.taker_id
 # ================ HELPER MACROS WALLET SERVICE================
-
+#check who the seller , buyer according to the offer type
 GET_SELLER_BUYER = lambda order: (
     (order.offer.user_id, order.taker_id) if order.offer.trade_type == 'SELL'
     else (order.taker_id, order.offer.user_id)
@@ -112,7 +112,7 @@ def get_profile_stats(profile):
     }
 
 # ================ HELPER MACROS ORDER SERIALIZER================
-# Macros for common patterns
+# set the number of digits
 DECIMAL_FIELD = lambda digits, places, min_val=0.01: serializers.DecimalField(
     max_digits=digits, decimal_places=places, min_value=min_val
 )
@@ -162,23 +162,15 @@ def parse_date(date_str, end_of_day=False):
       *     call back:              n/a
       */
 *************************************************************************************************************"""
-def get_or_404(model, error_msg="Object not found", **kwargs):
-
-    try:
-        return model.objects.get(**kwargs)
-    except model.DoesNotExist:
-        raise NotFound(error_msg)
 
 def get_or_403(model, error_msg="Access denied", **kwargs):
-    """Macro للبحث مع رفع خطأ 403"""
     try:
         return model.objects.get(**kwargs)
     except model.DoesNotExist:
         raise PermissionDenied(error_msg)
 
 # ================ HELPER MACROS ORDER REPOSITORY================
-# Status time fields mapping
-
+#dic to update the time fields
 STATUS_TIME_FIELDS = {
     OrderStatus.PAID: ('paid_at', timezone.now),
     OrderStatus.COMPLETED: ('completed_at', timezone.now),

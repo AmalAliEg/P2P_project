@@ -49,9 +49,58 @@ class BaseOfferSerializer(serializers.ModelSerializer):
             'available': format_currency(obj.available_amount, obj.crypto_currency)
         }
 
+
+
+    """*************************************************************************************************************
+     /*	function name:		    _get_price_display
+     * 	function inputs:	    instance of  model
+     * 	function outputs:	    string (formatted price or market margin)
+     * 	function description:	return formatted price if fixed, or market margin percentage if floating
+     *   call back:              n/a
+     */
+     *************************************************************************************************************"""
+    def _get_price_display(self, obj):
+        """update the price based on price-type fixed or float"""
+        if obj.price_type == PriceType.FIXED:
+            return format_currency(obj.price, obj.fiat_currency, 2)
+        margin = obj.price_margin or Decimal('0')
+        return f"Market {'+' if margin >= 0 else ''}{margin}%"
+
+
+    """*************************************************************************************************************
+   /*	function name:		    _get_payment_methods
+   * 	function inputs:	    instance of model
+   * 	function outputs:	    list of payment method display names
+   * 	function description:	return the payment method display names for each offer   
+   *   call back:              n/a
+   */
+   *************************************************************************************************************"""
+    def _get_payment_methods(self, obj):
+        payment_map = self.context.get('payment_details_map', {})
+        return [
+            payment_map.get(id, {}).get('display_name', f"Payment Method #{id}")
+            for id in (obj.payment_method_ids or [])
+        ]
+
+
+
+
+    """*************************************************************************************************************
+    /*	function name:		    _get_payment_types
+    * 	function inputs:	    instance of model
+    * 	function outputs:	    return payment_method 
+    * 	function description:	return the payment method id and deatils for each    
+    *   call back:              n/a
+    */
+    *************************************************************************************************************"""
+    def _get_payment_types(self, obj):
+        payment_map = self.context.get('payment_details_map', {})
+        if not payment_map:
+            return ["there no payment method provided"]
+        return [payment_map.get(payment_id, {}).get('type', 'Unknown') for payment_id in obj.payment_method_ids]
+
+
 # ================ CREATE SERIALIZER ================
-
-
 
 class P2POfferCreateSerializer(serializers.ModelSerializer):
 
@@ -101,20 +150,6 @@ class P2POfferListSerializer(BaseOfferSerializer):
 
         return data
 
-    """*************************************************************************************************************
-     /*	function name:		    _get_price_display
-     * 	function inputs:	    instance of  model
-     * 	function outputs:	    string (formatted price or market margin)
-     * 	function description:	return formatted price if fixed, or market margin percentage if floating
-     *   call back:              n/a
-     */
-     *************************************************************************************************************"""
-    def _get_price_display(self, obj):
-        """update the price based on price-type fixed or float"""
-        if obj.price_type == PriceType.FIXED:
-            return format_currency(obj.price, obj.fiat_currency, 2)
-        margin = obj.price_margin or Decimal('0')
-        return f"Market {'+' if margin >= 0 else ''}{margin}%"
 
     """*************************************************************************************************************
     /*	function name:		    _calculate_completion_rate
@@ -129,21 +164,6 @@ class P2POfferListSerializer(BaseOfferSerializer):
             return "0.0%"
         rate = ((obj.total_amount - obj.available_amount) / obj.total_amount) * 100
         return f"{rate:.1f}%"
-
-    """*************************************************************************************************************
-   /*	function name:		    _get_payment_methods
-   * 	function inputs:	    instance of model
-   * 	function outputs:	    list of payment method display names
-   * 	function description:	return the payment method display names for each offer   
-   *   call back:              n/a
-   */
-   *************************************************************************************************************"""
-    def _get_payment_methods(self, obj):
-        payment_map = self.context.get('payment_details_map', {})
-        return [
-            payment_map.get(id, {}).get('display_name', f"Payment Method #{id}")
-            for id in (obj.payment_method_ids or [])
-        ]
 
 # ================ DETAIL SERIALIZER ================
 class P2POfferDetailSerializer(BaseOfferSerializer):
@@ -174,16 +194,7 @@ class OfferStatusUpdateSerializer(serializers.ModelSerializer):
             'payment_time_limit_minutes', 'remarks', 'auto_reply_message'
         ]
         # for partial update
-        extra_kwargs = {
-            'price': {'required': False},
-            'total_amount': {'required': False},
-            'min_order_limit': {'required': False},
-            'max_order_limit': {'required': False},
-            'payment_method_ids': {'required': False},
-            'price_margin': {'required': False},
-            'payment_time_limit_minutes': {'required': False},
-            'status': {'required': False}
-        }
+        extra_kwargs = {field: {'required': False} for field in fields}
 
 # ================ PUBLIC SERIALIZER ================
 class P2POfferPublicSerializer(BaseOfferSerializer):
@@ -211,16 +222,3 @@ class P2POfferPublicSerializer(BaseOfferSerializer):
         return data
 
 
-    """*************************************************************************************************************
-    /*	function name:		    _get_payment_types
-    * 	function inputs:	    instance of model
-    * 	function outputs:	    return payment_method 
-    * 	function description:	return the payment method id and deatils for each    
-    *   call back:              n/a
-    */
-    *************************************************************************************************************"""
-    def _get_payment_types(self, obj):
-        payment_map = self.context.get('payment_details_map', {})
-        if not payment_map:
-            return ["there no payment method provided"]
-        return [payment_map.get(payment_id, {}).get('type', 'Unknown') for payment_id in obj.payment_method_ids]

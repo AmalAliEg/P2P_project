@@ -14,7 +14,15 @@ class P2PWalletRepository:
 
     @staticmethod
     def update_wallet_balance(wallet, balance_delta=0, locked_delta=0):
-        """update the wallet balance"""
+        """
+        this function to update the wallet balance
+        args:
+            wallet: the wallet to update
+            balance_delta: the amount of the wallet balance
+            locked_delta: the amount of the wallet locked
+        return:
+            the updated wallet balance
+        """
         wallet.balance += balance_delta
         wallet.locked_balance += locked_delta
         wallet.save()
@@ -22,7 +30,17 @@ class P2PWalletRepository:
 
     @staticmethod
     def create_transaction(wallet, order=None, tx_type=None, amount=0):
-        """create transaction"""
+        """
+        this functiom that create transaction
+        args:
+            wallet: the wallet to create
+            order: the order to create the transaction
+            tx_type: the transaction type
+            amount: the amount of the transaction
+        return:
+            the created transaction
+
+        """
         return Transaction.objects.create(
             wallet=wallet,
             related_order=order,
