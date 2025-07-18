@@ -20,7 +20,6 @@ def extract_filters(query_params, filter_keys):
 
 FILTER_MAPPING = {
     'status': lambda v, q: q.filter(status=v.upper()),
-    'type': lambda v, q: q.filter(trade_type=v.upper()),
     'asset_type': {
         'Normal': lambda q: q.filter(crypto_currency__in=['USDT', 'USDC']),
         'Cash': lambda q: q.filter(crypto_currency__in=['USDT', 'USDC']),

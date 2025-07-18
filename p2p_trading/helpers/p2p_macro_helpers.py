@@ -29,23 +29,32 @@ def get_decimal(value):
     """Macro لتحويل إلى Decimal بأمان"""
     return Decimal(str(value)) if value is not None else Decimal('0')
 
+
+"""*************************************************************************************************************
+/*	function name:		    enrich_offers_with_profiles
+* 	function inputs:	    queryset of profile that match the ids
+* 	function outputs:	    queryset of offers that match te ids  
+* 	function description:	add the profile data to each offer 
+*   call back:              n/a
+*/
+*************************************************************************************************************"""
 def enrich_offers_with_profiles(offers, profile_model):
-    """Helper to add profiles to offers"""
+
     if not offers:
         return offers
 
-    # get all profiles
+    # get all profiles removing the repeated ids
     user_ids = list(set(offer.user_id for offer in offers))
+    #get list of profiles
     profiles = profile_model(user_ids)
-
+    #map list pf profile to dic
     profiles_map = {
         p.user_id: p for p in profiles
     }
 
-    # add profile to each offer
+    # add profile that match the offer
     for offer in offers:
         offer.user_profile = profiles_map.get(offer.user_id)
-
 
     return offers
 
@@ -77,12 +86,26 @@ def format_currency(amount, currency, decimals=8):
     """Macro"""
     return f"{amount:.{decimals}f} {currency}"
 
+"""*************************************************************************************************************
+ /*	function name:		    get_user_display_name
+ * 	function inputs:	    profile instance or None, user id 
+ * 	function outputs:	    string (nickname or User{id})
+ * 	function description:	to return the nikename if
+ *   call back:             n/a
+ */
+ *************************************************************************************************************"""
 def get_user_display_name(profile, user_id):
-    """Macro to display user's name"""
     return profile.nickname if profile else f'User{user_id}'
 
+"""*************************************************************************************************************
+ /*	function name:		    get_profile_stats
+ * 	function inputs:	    profile instance or None
+ * 	function outputs:	    dict with total_orders and completion_rate
+ * 	function description:	to return the total of orders and completed rate
+ *   call back:             n/a
+ */
+ *************************************************************************************************************"""
 def get_profile_stats(profile):
-    """Macro for profile statistics"""
     return {
         'total_orders': profile.total_30d_trades if profile else 0,
         'completion_rate': f"{profile.completion_rate_30d if profile else 100.0:.2f}%"
@@ -131,8 +154,16 @@ def parse_date(date_str, end_of_day=False):
     except ValueError:
         return None
 
+"""*************************************************************************************************************
+      /*	function name:		    get_or_404
+      * 	function inputs:	    model class it self , error_msg, any attri like pk
+      * 	function outputs:	    raise error or nothing   
+      * 	function description:	check the existence of the offer 
+      *     call back:              n/a
+      */
+*************************************************************************************************************"""
 def get_or_404(model, error_msg="Object not found", **kwargs):
-    """Macro للبحث مع رفع خطأ 404"""
+
     try:
         return model.objects.get(**kwargs)
     except model.DoesNotExist:

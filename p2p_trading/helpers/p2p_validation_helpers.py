@@ -4,7 +4,6 @@ from decimal import Decimal
 from rest_framework.exceptions import ValidationError
 from ..constants.constant import TradeType, OfferStatus, PriceType
 from ..helpers.p2p_macro_helpers  import get_decimal
-from ..models import Wallet
 
 # ================ HELPER MACROS OFFER SERVICE================
 
@@ -87,20 +86,25 @@ class OfferValidator:
                                f'your balance {WalletService.get_or_create_wallet(data.get('currency'))} it less than the total amount '
                                )
 
-    @staticmethod
-    def validate_offer_update(offer, user_id, data):
-        """validate the authorithation of updates """
-        validate_and_raise(
-            offer.user_id != user_id,
-            "You don't have permission to update this offer"
-        )
 
+    """*************************************************************************************************************
+    /*	function name:		    validate_offer_update
+    * 	function inputs:	    offer object, user id , validated data
+    * 	function outputs:	    True or error-message
+    * 	function description:	validate over the user, offer status 
+    *   call back:              n/a 
+    */
+    *************************************************************************************************************"""
+    @staticmethod
+    def validate_offer_update(offer, data):
+
+        # if the status of the offer is completed, rais error
         validate_and_raise(
             offer.status == OfferStatus.COMPLETED,
             "Cannot update a completed offer. Please create a new one."
         )
 
-        # التحقق من تقليل الكمية
+        # validate that the total amount not less than sold_amount
         if 'total_amount' in data and data['total_amount'] < offer.total_amount:
             sold_amount = offer.total_amount - offer.available_amount
             validate_and_raise(
@@ -108,9 +112,17 @@ class OfferValidator:
                 f"Cannot reduce total amount below sold amount ({sold_amount})"
             )
 
+
+    """*************************************************************************************************************
+    /*	function name:		    validate_offer_deletion
+    * 	function inputs:	    offer object
+    * 	function outputs:	    True or error-message
+    * 	function description:	check if there are active orders 
+    *   call back:              n(), 
+    */
+    *************************************************************************************************************"""
     @staticmethod
     def validate_offer_deletion(offer):
-        """validate the authorization of deletions """
         if offer.available_amount < offer.total_amount:
             sold = offer.total_amount - offer.available_amount
             validate_and_raise(

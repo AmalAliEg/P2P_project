@@ -17,8 +17,16 @@ from ..helpers import (
 class BaseOfferSerializer(serializers.ModelSerializer):
     """Base serializer  common methods """
 
+
+    """*************************************************************************************************************
+     /*	function name:		    get_advertiser_info
+     * 	function inputs:	    instance of  model
+     * 	function outputs:	    
+     * 	function description:	return price if the price type is floating 
+     *   call back:             get_user_display_name(), get_profile_stats(), 
+     */
+     *************************************************************************************************************"""
     def get_advertiser_info(self, obj):
-        """function to get advertiser info"""
         profile = getattr(obj, 'user_profile', None)
         return {
             'user_id': obj.user_id,
@@ -26,8 +34,15 @@ class BaseOfferSerializer(serializers.ModelSerializer):
             **get_profile_stats(profile)
         }
 
+    """*************************************************************************************************************
+     /*	function name:		    get_formatted_limits
+     * 	function inputs:	    instance of  model
+     * 	function outputs:	    
+     * 	function description:	
+     *   call back:              n/a
+     */
+     *************************************************************************************************************"""
     def get_formatted_limits(self, obj):
-        """function to set limits"""
         return {
             'min': format_currency(obj.min_order_limit, obj.fiat_currency, 2),
             'max': format_currency(obj.max_order_limit, obj.fiat_currency, 2),
@@ -37,12 +52,7 @@ class BaseOfferSerializer(serializers.ModelSerializer):
 # ================ CREATE SERIALIZER ================
 
 
-"""*************************************************************************************************************
-/*	class name:		        P2POfferCreateSerializer
-* 	class outputs:	
-* 	class description:	    
-*/
-*************************************************************************************************************"""
+
 class P2POfferCreateSerializer(serializers.ModelSerializer):
 
     #it restrict the format of the payment_methods_id to be only list
@@ -93,9 +103,9 @@ class P2POfferListSerializer(BaseOfferSerializer):
 
     """*************************************************************************************************************
      /*	function name:		    _get_price_display
-     * 	function inputs:	    instance
-     * 	function outputs:	    return price_margin
-     * 	function description:	return price if the price type is floating 
+     * 	function inputs:	    instance of  model
+     * 	function outputs:	    string (formatted price or market margin)
+     * 	function description:	return formatted price if fixed, or market margin percentage if floating
      *   call back:              n/a
      */
      *************************************************************************************************************"""
@@ -106,15 +116,29 @@ class P2POfferListSerializer(BaseOfferSerializer):
         margin = obj.price_margin or Decimal('0')
         return f"Market {'+' if margin >= 0 else ''}{margin}%"
 
+    """*************************************************************************************************************
+    /*	function name:		    _calculate_completion_rate
+    * 	function inputs:	    instance of model
+    * 	function outputs:	    rate of completion--->string percentage 
+    * 	function description:	return the percentage of completed order within this offer  
+    *   call back:              n/a
+    */
+    *************************************************************************************************************"""
     def _calculate_completion_rate(self, obj):
-        """complete percentage """
         if obj.total_amount <= 0:
             return "0.0%"
         rate = ((obj.total_amount - obj.available_amount) / obj.total_amount) * 100
         return f"{rate:.1f}%"
 
+    """*************************************************************************************************************
+   /*	function name:		    _get_payment_methods
+   * 	function inputs:	    instance of model
+   * 	function outputs:	    list of payment method display names
+   * 	function description:	return the payment method display names for each offer   
+   *   call back:              n/a
+   */
+   *************************************************************************************************************"""
     def _get_payment_methods(self, obj):
-        """get payment-method details"""
         payment_map = self.context.get('payment_details_map', {})
         return [
             payment_map.get(id, {}).get('display_name', f"Payment Method #{id}")
@@ -158,8 +182,6 @@ class OfferStatusUpdateSerializer(serializers.ModelSerializer):
             'payment_method_ids': {'required': False},
             'price_margin': {'required': False},
             'payment_time_limit_minutes': {'required': False},
-            'remarks': {'required': False},
-            'auto_reply_message': {'required': False},
             'status': {'required': False}
         }
 
@@ -188,9 +210,17 @@ class P2POfferPublicSerializer(BaseOfferSerializer):
 
         return data
 
+
+    """*************************************************************************************************************
+    /*	function name:		    _get_payment_types
+    * 	function inputs:	    instance of model
+    * 	function outputs:	    return payment_method 
+    * 	function description:	return the payment method id and deatils for each    
+    *   call back:              n/a
+    */
+    *************************************************************************************************************"""
     def _get_payment_types(self, obj):
-        """get the payment method """
         payment_map = self.context.get('payment_details_map', {})
         if not payment_map:
-            return ["InstaPay"]
-        return [payment_map.get(id, {}).get('type', 'Unknown') for id in obj.payment_method_ids]
+            return ["there no payment method provided"]
+        return [payment_map.get(payment_id, {}).get('type', 'Unknown') for payment_id in obj.payment_method_ids]

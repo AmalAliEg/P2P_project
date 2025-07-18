@@ -10,7 +10,6 @@ from ..serializers.p2p_offer_serilaizer import P2POfferCreateSerializer
 # ================ HELPER MACROS ================
 from ..helpers import (
     validate_and_raise,
-    validate_payment_methods,
     OfferValidator,
     enrich_offers_with_profiles
 )
@@ -67,33 +66,64 @@ class P2POfferService:
     *************************************************************************************************************"""
     @staticmethod
     def get_user_offers(user_id, filters=None):
-        """get all the offers of the user """
         return P2POfferService.repo.get_by_user_and_filters(user_id, filters or {})
 
+    """*************************************************************************************************************
+    /*	function name:		    get_offer_detail
+    * 	function inputs:	    user id, offer_id 
+    * 	function outputs:	    instance of the offer model
+    * 	function description:	function return object of specific offer 
+    *   call back:              get_offer_with_profile()
+    */
+    *************************************************************************************************************"""
     @staticmethod
     def get_offer_detail(user_id, offer_id):
-        """get details of specifc offer"""
-        return P2POfferService.repo.get_offer_with_profile(offer_id)
+        return P2POfferService.repo.get_offer_with_profile(user_id,offer_id)
 
+    """*************************************************************************************************************
+    /*	function name:		    update_offer
+    * 	function inputs:	    user id, offer_id , validated data 
+    * 	function outputs:	    instance of the offer model
+    * 	function description:	function return object of updated offer 
+    *    call back:              get_by_id(),validate_offer_update(),update_offer()
+    */
+    *************************************************************************************************************"""
     @staticmethod
     @transaction.atomic
     def update_offer(user_id, offer_id, data):
-        """update the offer"""
-        offer = P2POfferService.repo.get_by_id(offer_id)
-        OfferValidator.validate_offer_update(offer, user_id, data)
+        #validate the existence of the offerو user id
+        offer = P2POfferService.repo.get_by_id_and_owner(user_id,offer_id)
+        #apply validations over offer status, total amount
+        OfferValidator.validate_offer_update(offer, data)
         return P2POfferService.repo.update_offer(offer, data)
 
+    """*************************************************************************************************************
+    /*	function name:		    delete_offer
+    * 	function inputs:	    user id, offer_id 
+    * 	function outputs:	    instance of the offer model
+    * 	function description:	function to delete the object/record of offer model 
+    *    call back:             get_by_id_and_owner(),validate_offer_deletion(),soft_delete()
+    */
+    *************************************************************************************************************"""
     @staticmethod
     @transaction.atomic
     def delete_offer(user_id, offer_id):
-        """delete the offer"""
+        #validate the existence of the offerو user id
         offer = P2POfferService.repo.get_by_id_and_owner(user_id, offer_id)
+        #apply validations to check if there are active orders within this offer
         OfferValidator.validate_offer_deletion(offer)
         return P2POfferService.repo.soft_delete(offer)
 
+    """*************************************************************************************************************
+    /*	function name:		    get_public_offers
+    * 	function inputs:	    user id, offer_id 
+    * 	function outputs:	    instance of the offer model
+    * 	function description:	function to get all the objects/records of offer model 
+    *    call back:             get_public_offers(),enrich_offers_with_profiles(),get_profiles_by_user_ids()
+    */
+    *************************************************************************************************************"""
     @staticmethod
     def get_public_offers(filters):
-        """get the public offers for all users """
         clean_filters = {k: v for k, v in filters.items() if v}
         offers = P2POfferService.repo.get_public_offers(clean_filters)
         return enrich_offers_with_profiles(offers, P2PProfileRepository.get_profiles_by_user_ids)
@@ -123,9 +153,17 @@ class P2POfferService:
         # get the details from repository
         return P2POfferRepository.get_payment_methods_details(unique_ids)
 
+    """*************************************************************************************************************
+    /*	function name:		    get_payment_methods_for_offers
+    * 	function inputs:	    object of offer model
+    * 	function outputs:	    list of unique_ids from tj
+    * 	function description:	get ids for object and pass the ids to the repository
+    *   call back:              get_payment_methods_details()
+    */
+    *************************************************************************************************************"""
     @staticmethod
     def get_payment_methods_for_single_offer(offer):
-        """جلب تفاصيل طرق الدفع لعرض واحد"""
+        #validate the existence of the payment_method_ids within the offer object
         if not offer.payment_method_ids:
             return {}
         return P2POfferRepository.get_payment_methods_details(offer.payment_method_ids)

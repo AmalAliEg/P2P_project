@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 # ================ HELPER MACROS OFFER CONTROLLERS================
 def success_response(data=None, message=None, count=None, status_code=status.HTTP_200_OK):
-    """Macro للاستجابات الناجحة"""
+    """if the response is success """
     response = {"success": True}
     if data is not None:
         response["data"] = data

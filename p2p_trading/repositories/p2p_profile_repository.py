@@ -43,9 +43,17 @@ class P2PProfileRepository:
         """get or create the profile from id """
         return GET_OR_CREATE_PROFILE(user_id)
 
+    """*************************************************************************************************************
+    /*	function name:		    get_profiles_by_user_ids
+    * 	function inputs:	    user ids
+    * 	function outputs:	    queryset of profiles that match te ids  
+    * 	function description:	get profiles by user ids 
+    *   call back:              n/a
+    */
+    *************************************************************************************************************"""
     @staticmethod
     def get_profiles_by_user_ids(user_ids):
-        """get profiles by user ids"""
+
         return P2PProfile.objects.filter(user_id__in=user_ids)
 
     @staticmethod
