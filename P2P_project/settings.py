@@ -5,32 +5,32 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 
-# 1. تحديد المسارات وتحميل متغيرات البيئة (.env)
-# ==============================================================================
+# 1. Path Configuration and Environment Variables (.env)
+#==============================================================================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# تحميل ملف .env من المجلد الرئيسي للمشروع
+# Load .env file from project root directory
 dotenv_path = BASE_DIR / '.env'
 load_dotenv(dotenv_path)
 
 
-# 2. الإعدادات الأساسية والأمان
+# 2. Core Settings and Security
 # ==============================================================================
-# اقرأ الـ SECRET_KEY من ملف .env دائماً
+# Always read SECRET_KEY from .env file
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'default-secret-key-for-development')
 
-# اقرأ حالة الـ DEBUG من .env، واجعل القيمة الافتراضية False للـ production
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+# Read DEBUG state from .env, default to False for production
+DEBUG = 'True'
 
-# اقرأ الـ ALLOWED_HOSTS من .env
+# Read ALLOWED_HOSTS from .env
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 
-# في حالة الـ DEBUG، اسمح بكل الـ hosts لتسهيل التطوير المحلي
+# In DEBUG mode, allow all hosts for local development
 if DEBUG:
     ALLOWED_HOSTS.append('*')
 
 
-# 3. التطبيقات المثبتة (INSTALLED_APPS)
+# 3.  (INSTALLED_APPS)
 # ==============================================================================
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -45,20 +45,21 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_framework_simplejwt.token_blacklist',
     'debug_toolbar',
-    'corsheaders', # مهم جداً للتواصل مع الـ Frontend
+    'corsheaders',
+    'drf_yasg',
 
-    # تطبيقات المشروع
+    # project app
     'p2p_trading.apps.P2PTradingConfig',
     'chat.apps.ChatConfig',
     'MainDashboard.apps.MaindashboardConfig',
 ]
 
-# 4. الـ Middleware
+# 4.  Middleware
 # ==============================================================================
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware', # يجب أن يكون في مكان متقدم
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -67,19 +68,18 @@ MIDDLEWARE = [
     'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
-# إعدادات CORS للسماح للـ Frontend بالوصول للـ API
-CORS_ALLOW_ALL_ORIGINS = True # في التطوير. في الإنتاج، حدد الـ domain الخاص بالـ Frontend
+# CORS settings to allow Frontend access to API
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
 
 
-# 5. إعدادات الـ URLs والقوالب و ASGI/WSGI
+# 5. URLs, Templates, and ASGI/WSGI Configuration
 # ==============================================================================
 ROOT_URLCONF = 'P2P_project.urls'
 WSGI_APPLICATION = 'P2P_project.wsgi.application'
-#ASGI_APPLICATION = 'P2P_project.asgi.application' # مهم للشات و Django Channels
 
 TEMPLATES = [
     {
@@ -98,10 +98,10 @@ TEMPLATES = [
 ]
 
 
-# 6. قواعد البيانات (Databases)
+# 6. (Databases)
 # ==============================================================================
 DATABASES = {
-    # قاعدة البيانات الرئيسية لكل موديلز الـ P2P
+    #main database for all P2P models
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('DB_NAME'),
@@ -110,7 +110,7 @@ DATABASES = {
         'HOST': os.environ.get('DB_HOST'),
         'PORT': os.environ.get('DB_PORT', '5432'),
     },
-    # قاعدة بيانات منفصلة للشات (اختياري لكنه ممارسة جيدة)
+    # database for all chat models
     'chat_db': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('CHAT_DB_NAME'),
@@ -119,7 +119,7 @@ DATABASES = {
         'HOST': os.environ.get('CHAT_DB_HOST'),
         'PORT': os.environ.get('CHAT_DB_PORT', '5432'),
     },
-    # قاعدة بيانات منفصلة main_dashboard (اختياري لكنه ممارسة جيدة)
+    # database for all  main_dashboard models
     'main_db': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('MAIN_DB_NAME'),
@@ -130,14 +130,13 @@ DATABASES = {
     }
 }
 
-# موجه قواعد البيانات لتوجيه موديلز الشات إلى قاعدة البيانات الخاصة بها
+# Database router to direct chat models to their specific database
 DATABASE_ROUTERS = ['P2P_project.routers.DatabaseRouter']
 
 
-# 7. إعدادات المصادقة (Authentication)
+
 # ==============================================================================
-# بما أن خدمة المستخدمين منفصلة، لا نحتاج لتحديد AUTH_USER_MODEL هنا
-# المصادقة ستتم عبر API tokens يتم التحقق منها.
+# 7. Authentication Settings
 AUTH_USER_MODEL = 'MainDashboard.MainUser'
 
 REST_FRAMEWORK = {
@@ -147,11 +146,12 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
-    ]
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'
+
 }
 
-# إعدادات JWT (يجب أن تتطابق مع إعدادات الخدمة الرئيسية)
-# بما أن هذه الخدمة "تستهلك" الـ token ولا تنشئه، نحتاج فقط لمفتاح التحقق
+# JWT Settings
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
@@ -160,7 +160,7 @@ SIMPLE_JWT = {
     'UPDATE_LAST_LOGIN': False,
 
     'ALGORITHM': 'HS256',
-    # أهم جزء: مفتاح التحقق يجب أن يكون نفس الـ SECRET_KEY المستخدم في الخدمة الرئيسية لإنشاء الـ token
+    # Most important: verification key must match the SECRET_KEY used in the main service for token creation
     'SIGNING_KEY': os.environ.get('MAIN_SERVICE_SECRET_KEY'),
     'VERIFYING_KEY': os.environ.get('MAIN_SERVICE_SECRET_KEY'),
 
@@ -175,11 +175,14 @@ SIMPLE_JWT = {
 }
 
 
-# 8. إعدادات الملفات (Static & Media)
+# 8. Static file
 # ==============================================================================
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles' # مجلد لتجميع الملفات عند عمل collectstatic
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 # Password validation
 # ==============================================================================
 
@@ -198,7 +201,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# 9. إعدادات التدويل (Internationalization)
+# 9.  (Internationalization) setting
 # ==============================================================================
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'

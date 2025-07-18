@@ -18,7 +18,6 @@ from ..helpers import (
     GET_TAKER_TYPE,
     PAYMENT_DEADLINE,
     GET_BUYER_ID,
-    GET_SELLER_ID
 
 )
 

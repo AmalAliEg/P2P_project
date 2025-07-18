@@ -4,7 +4,7 @@ from decimal import Decimal
 from datetime import datetime
 from django.utils import timezone
 from rest_framework import serializers
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import  PermissionDenied
 
 from ..constants.constant import OrderStatus
 from ..models.p2p_wallet_model import Wallet
@@ -67,7 +67,6 @@ GET_TAKER_TYPE = lambda offer_type: 'BUY' if offer_type == 'SELL' else 'SELL'
 PAYMENT_DEADLINE = lambda minutes: timezone.now() + timezone.timedelta(minutes=minutes)
 
 GET_BUYER_ID = lambda order: order.taker_id if order.trade_type == 'BUY' else order.maker_id
-GET_SELLER_ID = lambda order: order.maker_id if order.trade_type == 'BUY' else order.taker_id
 # ================ HELPER MACROS WALLET SERVICE================
 #check who the seller , buyer according to the offer type
 GET_SELLER_BUYER = lambda order: (

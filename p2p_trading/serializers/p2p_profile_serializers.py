@@ -1,7 +1,7 @@
 # p2p_trading/serializers/p2p_profile_serializers.py
 
 from rest_framework import serializers
-from ..models import P2PProfile
+from ..models import P2PProfile,Feedback
 from ..helpers import FORMAT_PERCENTAGE, FORMAT_TIME
 
 
@@ -77,6 +77,26 @@ class MainPaymentMethodSerializer(serializers.Serializer):
     primary = serializers.BooleanField()
 
 
+
+class BlockUserSerializer(serializers.Serializer):
+    """Serializer for blocking users"""
+    user_id = serializers.IntegerField()
+
+class FeedbackSerializer(serializers.ModelSerializer):
+    """Serializer for the feedback model"""
+    reviewer_nickname = serializers.CharField(source='reviewer.nickname', read_only=True)
+    order_id = serializers.IntegerField(source='order.id', read_only=True)
+
+    class Meta:
+        model = Feedback
+        fields = ['id', 'order_id','reviewer_nickname', 'is_positive', 'comment', 'created_at']
+        read_only_fields = ['id', 'reviewer_nickname', 'created_at']
+
+class FeedbackCreateSerializer(serializers.Serializer):
+    """Serializer to create a new feedback"""
+    order_id = serializers.IntegerField()
+    is_positive = serializers.BooleanField()
+    comment = serializers.CharField(required=False, allow_blank=True)
 
 
 

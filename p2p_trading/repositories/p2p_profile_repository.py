@@ -1,7 +1,8 @@
 # p2p_trading/repositories/p2p_profile_repository.py
 import time
 
-from ..models import P2PProfile
+from ..models import P2PProfile,Feedback,BlockedUser,P2POrder
+#from ..models.p2p_order_model import P2POrder
 
 from ..helpers import get_or_403, validate_and_raise
 from MainDashboard.models import PaymentMethods,MainUser
@@ -210,14 +211,155 @@ class P2PProfileRepository:
 
     @staticmethod
     def delete_payment_method(method_id, profile):
-        """ (soft delete)"""
+        """
+        soft delete
+        args:
+            method_id (str): payment method id
+            profile (P2PProfile): user profile
+        return:
+            None
+
+        """
         method = get_or_403(PaymentMethods, id=method_id, user_id=profile.user_id)
         method.delete()
         return method
 
 
 
+    @staticmethod
+    def get_feedback(profile, feedback_type='received'):
+        """
+        get feedback
 
+        args:
+            profile (P2PProfile): user profile
+            feedback_type (str):
+        return:
+            None
 
+        """
+        return getattr(profile, f'{feedback_type}_feedback').all()
+
+    @staticmethod
+    def add_feedback(reviewer_profile, reviewee_profile, order, is_positive, comment=''):
+        """add feedback
+        args:
+            reviewer_profile (P2PProfile): user profile
+            reviewee_profile (P2PProfile): user profile
+            order (int):
+            comment (str):
+        return:
+            None
+        """
+        return Feedback.objects.create(
+            reviewer=reviewer_profile,
+            reviewee=reviewee_profile,
+            order=order,
+            is_positive=is_positive,
+            comment=comment
+        )
+
+    @staticmethod
+    def validate_feedback_order(order_id,reviewer_id):
+        """
+        function to validate feedback order
+        args:
+            order_id (str): feedback order id
+            reviewer_id (str): reviewer id
+        return:
+            None
+
+        """
+
+        order = get_or_403(P2POrder, id=order_id, error_msg="Order not found")
+
+        #validate that order is complete
+        validate_and_raise(
+            order.status != 'COMPLETED',
+            'Order must be completed to add feedback'
+        )
+
+        # validate reviewer is part of order
+        validate_and_raise(
+            reviewer_id not in [order.maker_id, order.taker_id],
+            'You are not part of this order'
+        )
+        # validate feedback doesn't exist
+        validate_and_raise(
+            Feedback.objects.filter(reviewer__user_id=reviewer_id, order=order).exists(),
+            'You have already submitted feedback for this order'
+        )
+        #get the reviewee id based on the reviewr taker /maker
+        reviewee_id = order.taker_id if reviewer_id == order.maker_id else order.maker_id
+        return {
+            'valid': True,
+            'order': order,
+            'reviewee_id': reviewee_id
+        }
+
+    @staticmethod
+    def update_feedback_stats(profile):
+        """update feedback statistics"""
+        from django.db.models import Count, Q
+
+        stats = profile.received_feedback.aggregate(
+            total=Count('id'),
+            positive=Count('id', filter=Q(is_positive=True))
+        )
+
+        profile.total_feedback = stats['total'] or 0
+        profile.positive_feedback = stats['positive'] or 0
+        profile.feedback_rate = (profile.positive_feedback / profile.total_feedback * 100) if profile.total_feedback > 0 else 100.0
+        profile.save(update_fields=['total_feedback', 'positive_feedback', 'feedback_rate'])
+
+    @staticmethod
+    def validate_user_in_order(user_id, order_id):
+        """
+        basic validation that user is part of order
+        args:
+            user_id (str): user id
+            order_id (str): order id
+        return:
+            None
+        """
+        order = get_or_403(P2POrder, id=order_id, error_msg="Order not found")
+
+        validate_and_raise(
+            user_id not in [order.maker_id, order.taker_id],
+            'You are not part of this order'
+        )
+        return order
+
+    @staticmethod
+    def get_my_feedback_for_order(user_id, order_id):
+        """
+        get my feedback for specific order
+        args:
+            user_id (str): user id
+            order_id (str): order id
+        return:
+            None
+        """
+        return Feedback.objects.filter(
+            reviewer__user_id=user_id,
+            order_id=order_id
+        ).first()
+
+    @staticmethod
+    def get_other_feedback_for_order(user_id, order_id):
+        """
+        get other party feedback for specific order
+        args:
+            user_id (str): user id
+            order_id (str): order id
+        return:
+            None
+        """
+
+        return Feedback.objects.filter(
+            order_id=order_id
+        ).exclude(
+            reviewer__user_id=user_id
+        ).first()
 
 

@@ -29,13 +29,14 @@ class Feedback(BaseModel):
     """feedback model for the  P2P user profile"""
     reviewer = models.ForeignKey(P2PProfile, on_delete=models.CASCADE, related_name='given_feedback')
     reviewee = models.ForeignKey(P2PProfile, on_delete=models.CASCADE, related_name='received_feedback')
-    order = models.OneToOneField('p2p_trading.P2POrder', on_delete=models.CASCADE)
+    order = models.ForeignKey('p2p_trading.P2POrder', on_delete=models.CASCADE)
     is_positive = models.BooleanField()
     comment = models.TextField(blank=True, null=True)
 
     class Meta:
         db_table = 'p2p_feedback'
         app_label = 'p2p_trading'
+        unique_together = ['reviewer', 'order']
 
 
 class Follow(BaseModel):

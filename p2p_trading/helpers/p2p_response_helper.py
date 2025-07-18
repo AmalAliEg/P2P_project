@@ -25,3 +25,28 @@ def error_response(error, status_code=status.HTTP_400_BAD_REQUEST, details=None)
 # ================ HELPER MACROS ORDER CONTROLLERS================
 # Response formatters
 ORDER_RESPONSE = lambda order, msg: {"order_id": str(order.id), "status": order.status, "message": msg}
+
+
+# ================ HELPER MACROS PROFILE CONTROLLERS================
+FORMAT_MY_FEEDBACK = lambda feedback: {
+    "id": feedback.id,
+    "order_id": feedback.order.id,
+    "my_feedback": feedback.comment,
+    "my_rating": "positive" if feedback.is_positive else "negative",
+    "submitted_at": feedback.created_at
+} if feedback else None
+
+FORMAT_THEIR_FEEDBACK = lambda feedback: {
+    "id": feedback.id,
+    "order_id": feedback.order.id,
+    "reviewer_nickname": feedback.reviewer.nickname,
+    "counterparty_feedback": feedback.comment,
+    "their_rating": "positive" if feedback.is_positive else "negative",
+    "submitted_at": feedback.created_at
+} if feedback else None
+
+ORDER_FEEDBACK_RESPONSE = lambda order_id, my_feedback, their_feedback: {
+    "order_id": str(order_id),
+    "my_feedback": FORMAT_MY_FEEDBACK(my_feedback),
+    "counterparty_feedback": FORMAT_THEIR_FEEDBACK(their_feedback)
+}

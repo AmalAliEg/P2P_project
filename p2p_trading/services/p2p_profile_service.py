@@ -1,8 +1,11 @@
 # p2p_trading/services/p2p_profile_service.py
 
 from django.db import transaction
+from rest_framework.exceptions import ValidationError
+
 from ..repositories.p2p_profile_repository import P2PProfileRepository
-from ..helpers import validate_and_raise
+from ..helpers import validate_and_raise, ORDER_FEEDBACK_RESPONSE,get_or_403
+from ..serializers.p2p_profile_serializers import FeedbackSerializer
 
 
 class P2PProfileService:
@@ -100,4 +103,56 @@ class P2PProfileService:
         profile = P2PProfileService.repo.get_or_create_profile(user_id)
         return P2PProfileService.repo.delete_payment_method(method_id, profile)
 
+
+
+    @staticmethod
+    def get_user_feedback( user_id):
+        """
+        get the feedback of a user
+        args:
+            user_id: user id
+        return:
+            feedback: feedback
+        """
+
+        profile = P2PProfileService.repo.get_or_create_profile(user_id)
+        return P2PProfileService.repo.get_feedback(profile, feedback_type='received')
+
+    @staticmethod
+    def add_feedback( reviewer_id, order_id, is_positive, comment=''):
+        #get the order
+        order_data = P2PProfileService.repo.validate_feedback_order(order_id,reviewer_id)
+
+
+        #validate the status of the order
+        if not order_data['valid']:
+            raise ValidationError(order_data['error'])
+
+        #add the feedback
+        reviewer_profile = P2PProfileService.repo.get_or_create_profile(reviewer_id)
+        reviewee_profile = P2PProfileService.repo.get_or_create_profile(order_data['reviewee_id'])
+
+        feedback= P2PProfileService.repo.add_feedback(
+            reviewer_profile=reviewer_profile,
+            reviewee_profile=reviewee_profile,
+            order=order_data['order'],
+            is_positive=is_positive,
+            comment=comment
+        )
+        #P2PProfileService.repo.update_feedback_stats(reviewee_profile)
+        return feedback
+
+    @staticmethod
+    def get_order_feedback(user_id, order_id):
+        """
+        get mutual feedback for a specific order
+        """
+        # validate user is part of the order
+        order = P2PProfileService.repo.validate_user_in_order(user_id, order_id)
+
+        # get both feedbacks
+        my_feedback = P2PProfileService.repo.get_my_feedback_for_order(user_id, order_id)
+        other_feedback = P2PProfileService.repo.get_other_feedback_for_order(user_id, order_id)
+
+        return ORDER_FEEDBACK_RESPONSE(order_id, my_feedback, other_feedback)
 

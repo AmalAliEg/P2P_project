@@ -9,7 +9,7 @@ from ..services.p2p_profile_service import P2PProfileService
 from ..serializers.p2p_profile_serializers import (
     P2PProfileOverviewSerializer, P2PProfileUpdateSerializer,
     PaymentMethodCreateSerializer,
-     MainPaymentMethodSerializer
+    MainPaymentMethodSerializer, FeedbackCreateSerializer, FeedbackSerializer
 )
 from ..helpers import handle_exception,success_response
 
@@ -145,6 +145,58 @@ class P2PProfileController(viewsets.ViewSet):
         return success_response(message="Payment method deleted successfully")
 
 
+
+
+    # ================ Feedback ================
+
+    @action(detail=True, methods=['get'], url_path='feedback')
+    @handle_exception
+    def list_feedback(self, request,pk=None):
+        """
+        list all the feedback for the user
+        API format:
+            GET /api/p2p/profiles/{user_id}/feedback/
+        """
+        feedback = self.service.get_user_feedback(pk)
+        serializer = FeedbackSerializer(feedback, many=True)
+        return success_response(serializer.data)
+
+    @action(detail=False, methods=['post'], url_path='feedback/add')
+    @handle_exception
+    def add_feedback(self, request):
+        """
+        add feedback to the counterparty after the order is completed
+        API format:
+
+            POST /api/p2p/profiles/feedback/add/
+        """
+        serializer = FeedbackCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        feedback = self.service.add_feedback(
+            request.user.id,
+            **serializer.validated_data
+        )
+
+        return success_response(
+            FeedbackSerializer(feedback).data,
+            message="Feedback added successfully",
+            status_code=status.HTTP_201_CREATED
+        )
+
+
+    @action(detail=False, methods=['get'], url_path='order-feedback/(?P<order_id>[^/.]+)')
+    @handle_exception
+    def order_feedback(self, request, order_id=None):
+        """
+        show the feedback within specific order
+        API format:
+
+            GET /api/p2p/profiles/order-feedback/{order_id}/
+
+        """
+        feedback_data = self.service.get_order_feedback(request.user.id, order_id)
+        return success_response(feedback_data)
 
 
 
