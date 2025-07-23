@@ -1,5 +1,5 @@
 # p2p_trading/controllers/p2p_offer_controller.py
-
+from django.db import transaction
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
@@ -38,10 +38,8 @@ class P2POfferController(viewsets.ViewSet):
     */
     *************************************************************************************************************"""
     @handle_exception
+    @transaction.atomic
     def create(self, request):
-
-        # print(f"Request data: {request.data}")
-        # print(f"User ID: {request.user.id}")
 
         #instance from the offer model
         offer = self.service.create_offer(user_id=request.user.id, data=request.data)

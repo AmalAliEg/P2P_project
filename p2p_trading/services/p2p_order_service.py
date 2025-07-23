@@ -29,6 +29,7 @@ REPO = {'offer': P2POfferRepository, 'order': P2POrderRepository}
 class P2POrderService:
 
     @staticmethod
+    @transaction.atomic
     def create_order_from_offer(taker_id, data):
         """
         Create a new P2P order from an existing offer

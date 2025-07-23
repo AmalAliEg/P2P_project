@@ -2,7 +2,7 @@
 # MainDashboard/models.py
 from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager,PermissionsMixin
 
 class MainUserManager(BaseUserManager):
     def create_user(self, username, password=None, **extra_fields):
@@ -16,33 +16,47 @@ class MainUserManager(BaseUserManager):
 
     #  create_superuser
     def create_superuser(self, username, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
 
-        raise NotImplementedError('Superuser creation is not supported for this user model.')
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
 
+        return self.create_user(username, password, **extra_fields)
 
-class MainUser(AbstractBaseUser):
+class MainUser(AbstractBaseUser,PermissionsMixin):
     username = models.CharField(max_length=100, unique=True)
-
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
 
     objects = MainUserManager()
 
     USERNAME_FIELD = 'username'
-
+    REQUIRED_FIELDS = []
     def __str__(self):
         return self.username
 
     def has_perm(self, perm, obj=None):
         "Does the user have a specific permission?"
-        return False
+        # Superuser has all permissions
+        if self.is_active and self.is_superuser:
+            return True
+        return super().has_perm(perm, obj)
 
     def has_module_perms(self, app_label):
         "Does the user have permissions to view the app `app_label`?"
+        # Superuser can view all apps
+        if self.is_active and self.is_superuser:
+            return True
+        # Staff can view p2p_trading app
+        if self.is_staff and app_label == 'p2p_trading':
+            return True
         return False
 
-    @property
-    def is_staff(self):
-        "Is the user a member of staff?"
-        return False
+
 
     class Meta:
         db_table = 'main_user'

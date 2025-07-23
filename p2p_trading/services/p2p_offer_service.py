@@ -15,7 +15,7 @@ from ..helpers import (
 )
 # ================ SERVICE CLASS ================
 class P2POfferService:
-    repo = P2POfferRepository()  # Repository instance مشترك
+    repo = P2POfferRepository()  # Repository instance
 
 
     """*************************************************************************************************************

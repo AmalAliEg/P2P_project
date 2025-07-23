@@ -42,7 +42,6 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/p2p/', include('p2p_trading.urls')),
-    path('api/auth/', include('MainDashboard.urls')),
     path('api-auth/', include('rest_framework.urls')),
     # Swagger
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger'),
@@ -50,3 +49,4 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+

@@ -1,6 +1,7 @@
 # p2p_trading/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .controllers.p2p_wallet_controller import P2PWalletController
 from .controllers.p2p_offer_controller import P2POfferController
@@ -16,8 +17,11 @@ router.register(r'wallet', P2PWalletController, basename='p2p-wallet')
 router.register(r'profiles', P2PProfileController, basename='p2p-profile')
 
 
+
 urlpatterns = [
     path('', include(router.urls)),
+    path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
 
 

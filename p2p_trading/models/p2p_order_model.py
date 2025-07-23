@@ -9,12 +9,12 @@ from ..constants.constant import OrderStatus
 class P2POrder(BaseModel):
     order_number = models.CharField(max_length=20, unique=True) # رقم تسلسلي للطلب
 
-    # offer's counterparties
+    # order's counterparties
     offer = models.ForeignKey(P2POffer, on_delete=models.PROTECT, related_name='orders')
     maker_id = models.IntegerField(db_index=True)   #creator of the offer
     taker_id = models.IntegerField(db_index=True)   #who take or accept the offer
 
-    # offer's attr
+    # order's attr
     status = models.CharField(max_length=10, choices=OrderStatus.choices, default=OrderStatus.UNPAID)
     trade_type = models.CharField(max_length=4) # 'BUY' or 'SELL' change according to taker
     crypto_currency = models.CharField(max_length=10)
@@ -28,15 +28,34 @@ class P2POrder(BaseModel):
 
     # time
     payment_time_limit=models.DateTimeField()
-    paid_at = models.DateTimeField(null=True, blank=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
-    cancelled_at = models.DateTimeField(null=True, blank=True)
     chat_room_id = models.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
         db_table = 'p2p_order'
         app_label = 'p2p_trading'
         ordering = ['-created_at']
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(crypto_amount__gt=0),
+                name='order_crypto_amount_positive'
+            ),
+            models.CheckConstraint(
+                check=models.Q(fiat_amount__gt=0),
+                name='order_fiat_amount_positive'
+            ),
+            models.CheckConstraint(
+                check=models.Q(price__gt=0),
+                name='order_price_positive'
+            ),
+            models.CheckConstraint(
+                check=~models.Q(maker_id=models.F('taker_id')),
+                name='maker_taker_different'
+            ),
+            models.CheckConstraint(
+                check=models.Q(transaction_fee__gte=0),
+                name='transaction_fee_non_negative'
+            ),
+        ]
 
 
     #create unique order_numbere

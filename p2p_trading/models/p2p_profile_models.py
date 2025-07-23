@@ -20,6 +20,12 @@ class P2PProfile(BaseModel):
         db_table = 'p2p_profile'
         app_label = 'p2p_trading'
         ordering = ['-total_30d_trades']
+        constraints = [
+        models.CheckConstraint(
+            check=models.Q(user_id__gt=0),
+            name='valid_user_id'
+        ),
+        ]
 
     def __str__(self):
         return f"P2P Profile for {self.nickname}"
@@ -27,9 +33,9 @@ class P2PProfile(BaseModel):
 
 class Feedback(BaseModel):
     """feedback model for the  P2P user profile"""
-    reviewer = models.ForeignKey(P2PProfile, on_delete=models.CASCADE, related_name='given_feedback')
-    reviewee = models.ForeignKey(P2PProfile, on_delete=models.CASCADE, related_name='received_feedback')
-    order = models.ForeignKey('p2p_trading.P2POrder', on_delete=models.CASCADE)
+    reviewer = models.ForeignKey(P2PProfile, on_delete=models.PROTECT, related_name='given_feedback')
+    reviewee = models.ForeignKey(P2PProfile, on_delete=models.PROTECT, related_name='received_feedback')
+    order = models.ForeignKey('p2p_trading.P2POrder', on_delete=models.PROTECT)
     is_positive = models.BooleanField()
     comment = models.TextField(blank=True, null=True)
 
@@ -41,8 +47,8 @@ class Feedback(BaseModel):
 
 class Follow(BaseModel):
     """the relationship between the users"""
-    follower = models.ForeignKey(P2PProfile, on_delete=models.CASCADE, related_name='following')
-    followed = models.ForeignKey(P2PProfile, on_delete=models.CASCADE, related_name='followers')
+    follower = models.ForeignKey(P2PProfile, on_delete=models.PROTECT, related_name='following')
+    followed = models.ForeignKey(P2PProfile, on_delete=models.PROTECT, related_name='followers')
 
     class Meta:
         db_table = 'p2p_follow'
@@ -52,8 +58,8 @@ class Follow(BaseModel):
 
 class BlockedUser(BaseModel):
     """the blocking process and relationship between the users"""
-    blocker = models.ForeignKey(P2PProfile, on_delete=models.CASCADE, related_name='blocking')
-    blocked = models.ForeignKey(P2PProfile, on_delete=models.CASCADE, related_name='blocked_by')
+    blocker = models.ForeignKey(P2PProfile, on_delete=models.PROTECT, related_name='blocking')
+    blocked = models.ForeignKey(P2PProfile, on_delete=models.PROTECT, related_name='blocked_by')
 
     class Meta:
         db_table = 'p2p_blocked_user'
