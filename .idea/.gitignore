@@ -8,3 +8,13 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+# Static files
+staticfiles/
+static/
+
+# Environment variables
+.env
+.env.*
+
+# Chat app
+chat/
