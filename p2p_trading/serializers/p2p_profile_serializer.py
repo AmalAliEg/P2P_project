@@ -1,7 +1,8 @@
-# p2p_trading/serializers/p2p_profile_serializers.py
+# p2p_trading/serializers/p2p_profile_serializer.py
 
 from rest_framework import serializers
 from ..models import P2PProfile,Feedback
+from MainDashboard.models import PaymentMethods
 from ..helpers import FORMAT_PERCENTAGE, FORMAT_TIME
 
 
@@ -29,10 +30,10 @@ class P2PProfileOverviewSerializer(serializers.ModelSerializer):
         model = P2PProfile
         fields = [
             'nickname', 'username',
-            'total_30d_trades', 'completion_rate_30d', 'completion_rate_display',
-            'avg_release_time_minutes', 'avg_release_time_display',
-            'avg_pay_time_minutes', 'avg_pay_time_display',
-            'positive_feedback_count', 'positive_feedback_rate', 'positive_feedback_display',
+            'total_30d_trades',  'completion_rate_display',
+            'avg_release_time_display',
+            'avg_pay_time_display',
+            'positive_feedback_count',  'positive_feedback_display',
             'payment_methods_count', 'feedback_count', 'blocked_users_count',
             'followers_count', 'following_count'
         ]
@@ -67,20 +68,13 @@ class PaymentMethodCreateSerializer(serializers.Serializer):
     account_number = serializers.CharField(max_length=100, required=False, allow_blank=True)
     extra_details = serializers.JSONField(required=False, default=dict)
 
-class MainPaymentMethodSerializer(serializers.Serializer):
-    """Serializer to show the payment methods from MainDashboard"""
-    id = serializers.IntegerField()
-    payment_method_id = serializers.CharField()
-    type = serializers.CharField()
-    holder_name = serializers.CharField()
-    number = serializers.CharField()
-    primary = serializers.BooleanField()
+class PaymentMethodSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentMethods
+        fields = ['id', 'payment_method_id', 'type', 'holder_name', 'number', 'primary']
+        read_only_fields = ['id', 'payment_method_id', 'type']
 
 
-
-class BlockUserSerializer(serializers.Serializer):
-    """Serializer for blocking users"""
-    user_id = serializers.IntegerField()
 
 class FeedbackSerializer(serializers.ModelSerializer):
     """Serializer for the feedback model"""
@@ -99,6 +93,15 @@ class FeedbackCreateSerializer(serializers.Serializer):
     comment = serializers.CharField(required=False, allow_blank=True)
 
 
+
+class BlockUserSerializer(serializers.Serializer):
+    """Serializer for blocking users"""
+    user_id = serializers.IntegerField()
+
+
+class FollowUserSerializer(serializers.Serializer):
+    """Serializer for blocking users"""
+    user_id = serializers.IntegerField()
 
 
 

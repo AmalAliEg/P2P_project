@@ -1077,9 +1077,10 @@ class TransactionAdmin(admin.ModelAdmin):
     def amount_display(self, obj):
         """Display amount with color"""
         color = 'green' if obj.amount > 0 else 'red'
+        amount_str = f"{obj.amount:+.8f}"
         return format_html(
-            '<span style="color: {}; font-weight: bold;">{:+.8f}</span>',
-            color, obj.amount
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            color, amount_str
         )
     amount_display.short_description = 'Amount'
 

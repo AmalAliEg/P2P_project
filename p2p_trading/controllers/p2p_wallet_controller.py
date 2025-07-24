@@ -1,6 +1,5 @@
 # p2p_trading/controllers/p2p_wallet_controller.py
 
-from decimal import Decimal
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 
@@ -19,10 +18,15 @@ from ..helpers import (
     error_response,
 
 )
+from ..decorator.swagger_decorator import swagger_serializer_mapping
 
 # ================CONTROLLER CLASS ================
 
 
+@swagger_serializer_mapping(
+    transfer_in='WalletBalanceSerializer',
+
+)
 class P2PWalletController(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'], url_path='wallet-balance')

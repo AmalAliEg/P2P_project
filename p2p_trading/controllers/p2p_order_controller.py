@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from ..services.p2p_order_service import P2POrderService
 from ..serializers.p2p_order_serializer import P2POrderListSerializer
 
+from ..decorator.swagger_decorator import swagger_serializer_mapping
 
 # ================ HELPER MACROS ================
 
@@ -15,6 +16,15 @@ from ..helpers import (
     handle_exception,
     GET_CONTEXT,
     ORDER_RESPONSE,
+)
+
+
+@swagger_serializer_mapping(
+    create='P2POrderCreateSerializer',
+    list='P2POrderListSerializer',
+    retrieve='P2POrderListSerializer',
+    processing='P2POrderListSerializer',
+    records='P2POrderListSerializer'
 )
 
 # ================ CONTROLLER CLASS ================

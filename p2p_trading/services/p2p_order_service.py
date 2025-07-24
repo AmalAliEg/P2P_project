@@ -17,7 +17,7 @@ from ..helpers import (
     validate_and_raise,
     GET_TAKER_TYPE,
     PAYMENT_DEADLINE,
-    GET_BUYER_ID,
+    GET_SELLER_BUYER,
 
 )
 
@@ -46,7 +46,7 @@ class P2POrderService:
         validate_and_raise(not serializer.is_valid(), serializer.errors)
 
         # get the instance of offer
-        offer = REPO['offer'].get_by_id_and_owner(data['offer_id'],taker_id)
+        offer = REPO['offer'].get_public_offer_by_id(data['offer_id'])
 
         fiat_amount = serializer.validated_data['fiat_amount']
         crypto_amount = fiat_amount / offer.price
@@ -124,9 +124,11 @@ class P2POrderService:
         order = REPO['order'].get_by_id(order_id)
         print(f"Found order: {order.id}, taker_id: {order.taker_id}, status: {order.status}")  # debugging
 
+        seller_id, buyer_id = GET_SELLER_BUYER(order)
+
         # validate that the user is seller
         validate_and_raise(
-            GET_BUYER_ID(order) != user_id,
+            user_id != buyer_id,
             "Only buyer can mark order as paid"
         )
 
@@ -164,10 +166,10 @@ class P2POrderService:
 
         """
         order = REPO['order'].get_by_id(order_id)
-
+        seller_id, buyer_id = GET_SELLER_BUYER(order)
         # validate if user is the buyer
         validate_and_raise(
-            GET_BUYER_ID(order) != user_id,
+            user_id != seller_id,
             "Only seller can confirm payment"
         )
         #validate that the order status is unpaid

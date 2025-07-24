@@ -51,8 +51,10 @@ class P2PProfileRepository:
             dict: counts
         """
         return {
-            'payment_methods_count': profile.payment_methods.filter(is_active=True).count(),
-            'feedback_count': profile.received_feedback.count(),
+            'payment_methods_count': PaymentMethods.objects.using('main_db').filter(
+                user_id=profile.user_id
+            ).count(),
+            'feedback_count': Feedback.objects.filter(reviewee_id=profile.user_id).count(),
             'blocked_users_count': profile.blocking.count(),
             'followers_count': profile.followers.count(),
             'following_count': profile.following.count(),
@@ -67,14 +69,10 @@ class P2PProfileRepository:
         returns:
         profile: profile overview
         """
-        # Generate default nickname
-        #validate that user_id is str type
-        if isinstance(user_id, str):
-            #generate default nikename is "P2P-first 8 char in the user_id"
-            default_nickname = f'P2P-{user_id[:8]}'
-        else:
-            #generate default nikename is "P2P-user- user_id"
-            default_nickname = f'P2P-user-{user_id}'
+
+        user_id_int = int(user_id) if isinstance(user_id, str) else user_id
+
+        default_nickname = f'P2P-user-{user_id_int}'
         #get or create the profile
         profile, created = P2PProfile.objects.get_or_create(
             user_id=user_id,
@@ -125,7 +123,7 @@ class P2PProfileRepository:
         """
         queryset=PaymentMethods.objects.filter(user_id=profile.user_id)
         if active_only:
-            queryset=queryset.filter(is_active=True)
+            queryset=queryset.filter(user__is_active=True)
         return queryset
 
 
@@ -361,5 +359,29 @@ class P2PProfileRepository:
         ).exclude(
             reviewer__user_id=user_id
         ).first()
+
+
+    @staticmethod
+    def get_blocked_users(profile):
+        return profile.blocking.all()
+
+    @staticmethod
+    def block_user(blocker_profile, blocked_profile):
+        return BlockedUser.objects.get_or_create(
+            blocker=blocker_profile,
+            blocked=blocked_profile
+        )[0]
+
+    @staticmethod
+    def unblock_user(blocker_profile, blocked_profile):
+        BlockedUser.objects.filter(
+            blocker=blocker_profile,
+            blocked=blocked_profile
+        ).delete()
+
+
+
+
+
 
 

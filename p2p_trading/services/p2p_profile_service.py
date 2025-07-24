@@ -4,8 +4,8 @@ from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
 from ..repositories.p2p_profile_repository import P2PProfileRepository
-from ..helpers import validate_and_raise, ORDER_FEEDBACK_RESPONSE,get_or_403
-from ..serializers.p2p_profile_serializers import FeedbackSerializer
+from ..helpers import validate_and_raise, ORDER_FEEDBACK_RESPONSE
+from ..serializers.p2p_profile_serializer import FeedbackSerializer
 
 
 class P2PProfileService:
@@ -156,3 +156,31 @@ class P2PProfileService:
 
         return ORDER_FEEDBACK_RESPONSE(order_id, my_feedback, other_feedback)
 
+
+    @staticmethod
+    def get_blocked_users( id):
+        pass
+
+    @staticmethod
+    def block_user( id, param):
+        pass
+
+    @staticmethod
+    def unblock_user(id, param):
+        pass
+
+    @staticmethod
+    def get_followers( pk):
+        pass
+
+    @staticmethod
+    def get_following( pk):
+        pass
+
+    @staticmethod
+    def follow_user( id, param):
+        pass
+
+    @staticmethod
+    def unfollow_user( id, param):
+        pass

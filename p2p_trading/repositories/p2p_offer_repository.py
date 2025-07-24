@@ -1,5 +1,4 @@
 # p2p_trading/repositories/p2p_offer_repository.py
-from rest_framework.exceptions import PermissionDenied
 
 from ..constants.constant import OfferStatus
 from ..models.p2p_offer_model import P2POffer
@@ -85,6 +84,16 @@ class P2POfferRepository:
         return queryset.order_by(order_by)
 
 
+    @staticmethod
+    def get_public_offer_by_id(offer_id):
+        """Get offer by ID without ownership check - for public access"""
+        return get_or_403(
+            P2POffer,
+            "Offer not found or not available.",
+            pk=offer_id,
+            is_deleted=False,
+            status=OfferStatus.ACTIVE
+    )
     """*************************************************************************************************************
     /*	function name:		    get_by_id_and_owner
     * 	function inputs:	    offer id  , user id 

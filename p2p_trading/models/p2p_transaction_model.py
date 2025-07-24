@@ -28,5 +28,5 @@ class Transaction(BaseModel):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.transaction_type} of {self.amount} {self.wallet.currency} for {self.wallet.user.username}"
+        return f"{self.transaction_type} of {self.amount} {self.wallet.currency} for {self.wallet.user_id}"
 

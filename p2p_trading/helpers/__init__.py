@@ -42,7 +42,6 @@ from .p2p_macro_helpers import (
     GET_CURRENCY,
     GET_AMOUNT,
     CREATE_WALLET,
-    GET_BUYER_ID,
 
     FORMAT_PERCENTAGE,
     FORMAT_TIME,
@@ -101,7 +100,6 @@ __all__ = [
     'VALIDATE_AMOUNT',
     'GET_CURRENCY',
     'GET_AMOUNT',
-    'GET_BUYER_ID',
     'ORDER_FEEDBACK_RESPONSE',
     'FORMAT_MY_FEEDBACK',
     'FORMAT_THEIR_FEEDBACK',

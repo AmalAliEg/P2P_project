@@ -66,7 +66,6 @@ GET_TAKER_TYPE = lambda offer_type: 'BUY' if offer_type == 'SELL' else 'SELL'
 # Time helpers
 PAYMENT_DEADLINE = lambda minutes: timezone.now() + timezone.timedelta(minutes=minutes)
 
-GET_BUYER_ID = lambda order: order.taker_id if order.trade_type == 'BUY' else order.maker_id
 # ================ HELPER MACROS WALLET SERVICE================
 #check who the seller , buyer according to the offer type
 GET_SELLER_BUYER = lambda order: (
