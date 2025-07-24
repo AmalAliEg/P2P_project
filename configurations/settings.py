@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'debug_toolbar',
     'corsheaders',
-    'drf_yasg',
+    'drf_spectacular',
 
     # project app
     'p2p_trading.apps.P2PTradingConfig',
@@ -78,8 +78,8 @@ CORS_ALLOWED_ORIGINS = [
 
 # 5. URLs, Templates, and ASGI/WSGI Configuration
 # ==============================================================================
-ROOT_URLCONF = 'P2P_project.urls'
-WSGI_APPLICATION = 'P2P_project.wsgi.application'
+ROOT_URLCONF = 'configurations.urls'
+WSGI_APPLICATION = 'configurations.wsgi.application'
 
 TEMPLATES = [
     {
@@ -131,7 +131,7 @@ DATABASES = {
 }
 
 # Database router to direct chat models to their specific database
-DATABASE_ROUTERS = ['P2P_project.routers.DatabaseRouter']
+DATABASE_ROUTERS = ['configurations.routers.DatabaseRouter']
 
 
 
@@ -147,8 +147,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'
-
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
+}
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'P2P Trading API',
+    'DESCRIPTION': 'P2P Trading Platform',
+    'VERSION': '1.0.0',
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': '/api',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 # JWT Settings

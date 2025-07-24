@@ -23,19 +23,13 @@ from rest_framework_simplejwt.views import (
 )
 from django.conf import settings
 from django.conf.urls.static import static
-from rest_framework import permissions
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from drf_spectacular.utils import extend_schema
 
-schema_view = get_schema_view(
-    openapi.Info(
-        title="P2P Trading API",
-        default_version='v1',
-        description="P2P Trading Platform",
-    ),
-    public=True,
-    permission_classes=[permissions.AllowAny],
-)
+TokenObtainPairView = extend_schema(
+    tags=['Authentication'],
+    operation_id='token_obtain_pair'
+)(TokenObtainPairView)
 
 # In your project's urls.py:
 # path('api/p2p/', include('p2p_trading.urls')),
@@ -44,8 +38,8 @@ urlpatterns = [
     path('api/p2p/', include('p2p_trading.urls')),
     path('api-auth/', include('rest_framework.urls')),
     # Swagger
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger'),
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='redoc'),
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

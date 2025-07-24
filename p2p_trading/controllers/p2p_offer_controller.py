@@ -13,15 +13,24 @@ from ..serializers.p2p_offer_serilaizer import (
     P2POfferPublicSerializer
 )
 
+from ..decorator.swagger_decorator import swagger_serializer_mapping
 # ================ HELPER MACROS ================
 from ..helpers import (
     success_response,
     handle_exception,
     extract_filters
 )
+
+
 # ================ CONTROLLER CLASS ================
 
-
+@swagger_serializer_mapping(
+    create='P2POfferCreateSerializer',
+    list='P2POfferListSerializer',
+    retrieve='P2POfferDetailSerializer',
+    update='OfferStatusUpdateSerializer',
+    public_offers='P2POfferPublicSerializer'
+)
 
 class P2POfferController(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
@@ -41,7 +50,9 @@ class P2POfferController(viewsets.ViewSet):
     @transaction.atomic
     def create(self, request):
 
+
         #instance from the offer model
+
         offer = self.service.create_offer(user_id=request.user.id, data=request.data)
         #instance of the P2POfferCreateSerializer
         serializer = P2POfferCreateSerializer(offer)

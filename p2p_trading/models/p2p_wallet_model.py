@@ -49,5 +49,5 @@ class Wallet(BaseModel):
         return self.balance - self.locked_balance
 
     def __str__(self):
-        return f"{self.user_id.username}'s {self.currency} Wallet"
+        return f"{self.user_id}'s {self.currency} Wallet"
 
