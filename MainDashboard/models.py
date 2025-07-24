@@ -70,7 +70,7 @@ class MainUser(AbstractBaseUser,PermissionsMixin):
 class PaymentMethods(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name='payment_methods',
         null=True,
     )

@@ -25,6 +25,7 @@ django-cors-headers==4.7.0
 django-debug-toolbar==5.2.0
 djangorestframework==3.16.0
 djangorestframework_simplejwt==5.5.0
+drf-spectacular==0.28.0
 drf-yasg==1.21.10
 extras==1.0.0
 factory_boy==3.3.3
