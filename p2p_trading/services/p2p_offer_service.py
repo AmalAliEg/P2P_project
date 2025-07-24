@@ -17,20 +17,19 @@ from ..helpers import (
 class P2POfferService:
     repo = P2POfferRepository()  # Repository instance
 
-
-    """*************************************************************************************************************
-    /*	function name:		    create_offer
-    * 	function inputs:	    user id, data in the body send within the request
-    * 	function outputs:	    validated_data send to the repository
-    * 	function description:	clean, fiter the data before send to the repository
-    *   call back:              repo.create_offer(), P2POfferCreateSerializer(), validate_price_limits(), 
-                                validate_payment_methods_ownership(), validate_balance_for_sell()
-    */
-    *************************************************************************************************************"""
     @staticmethod
     @transaction.atomic
     def create_offer(user_id, data):
-        """create new offer"""
+        """
+        method to create new offer clean, fiter the data before send to the repository
+
+        args:
+            user_id: user id
+            data: user data
+        return:
+            validated_data send to the repository
+        """
+
         # 1. Validate input
         #instance of the P2POfferCreateSerializer
         serializer = P2POfferCreateSerializer(data=data)

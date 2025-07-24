@@ -27,6 +27,7 @@ class MainUserManager(BaseUserManager):
 
         return self.create_user(username, password, **extra_fields)
 
+
 class MainUser(AbstractBaseUser,PermissionsMixin):
     username = models.CharField(max_length=100, unique=True)
     is_active = models.BooleanField(default=True)
@@ -65,8 +66,6 @@ class MainUser(AbstractBaseUser,PermissionsMixin):
         ordering = ['username']
 
 
-
-
 class PaymentMethods(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -88,7 +87,7 @@ class PaymentMethods(models.Model):
 
 
 
-
+'''
 
 class MainWallet(models.Model):
     user = models.ForeignKey(
@@ -140,3 +139,5 @@ class MainTransaction(models.Model):
         db_table = 'main_transaction'
         app_label = 'MainDashboard'
         ordering = ['-created_at']
+
+'''

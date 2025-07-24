@@ -7,18 +7,23 @@ from django.http import HttpResponseRedirect
 from django.utils import timezone
 from decimal import Decimal
 
-# استيراد MainUser من التطبيق الآخر
+from rest_framework.exceptions import ValidationError
+
+from . import models
+
+#import from the main dashboard
+
 try:
-    from MainDashboard.models import MainUser, MainTransaction, MainWallet, PaymentMethods
+    from MainDashboard.models import MainUser
 
     MAIN_USER_AVAILABLE = True
 except ImportError:
     MAIN_USER_AVAILABLE = False
 
-# باقي الاستيرادات...
+#import from P2P app
 from .models.p2p_offer_model import P2POffer
 from .models.p2p_order_model import P2POrder
-from .models.p2p_profile_models import P2PProfile, Feedback
+from .models.p2p_profile_models import P2PProfile, Feedback,Follow, BlockedUser
 from .models.p2p_wallet_model import Wallet
 from .models.p2p_transaction_model import Transaction
 
@@ -26,7 +31,7 @@ from .models.p2p_transaction_model import Transaction
 from django import forms
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-
+'''
 # ================== MAIN WALLET ADMIN ==================
 if MAIN_USER_AVAILABLE:
     @admin.register(MainWallet)
@@ -287,11 +292,11 @@ if MAIN_USER_AVAILABLE:
                 ).exclude(pk=obj.pk).update(primary=False)
 
             super().save_model(request, obj, form, change)
-
+'''
 
 # ================== CUSTOM FORMS FOR USER ==================
 class MainUserCreationForm(forms.ModelForm):
-    """Form لإنشاء مستخدم جديد"""
+    """Form to create new user"""
     password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
     password2 = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
     use_hash = forms.BooleanField(label='Use password hash directly', required=False,
@@ -313,10 +318,10 @@ class MainUserCreationForm(forms.ModelForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         if self.cleaned_data.get("use_hash"):
-            # استخدم الـ hash مباشرة
+            # use a direct hash
             user.password = self.cleaned_data["password1"]
         else:
-            # اعمل hash للـ password العادي
+            #  hash password hashing
             user.set_password(self.cleaned_data["password1"])
         if commit:
             user.save()
@@ -324,13 +329,13 @@ class MainUserCreationForm(forms.ModelForm):
 
 
 class MainUserChangeForm(forms.ModelForm):
-    """Form لتعديل المستخدم"""
+    """Form to edit existing user"""
     password = ReadOnlyPasswordHashField(
         label="Password",
         help_text='Raw passwords are not stored. You can change password below.'
     )
 
-    # حقول إضافية للـ password
+    # addition fields for the password
     new_password = forms.CharField(
         label='New Password',
         widget=forms.PasswordInput,
@@ -383,7 +388,7 @@ class MainUserChangeForm(forms.ModelForm):
 if MAIN_USER_AVAILABLE:
     @admin.register(MainUser)
     class MainUserAdmin(BaseUserAdmin):
-        # استخدم الـ forms المخصصة
+        # use the forms
         form = MainUserChangeForm
         add_form = MainUserCreationForm
 
@@ -396,7 +401,7 @@ if MAIN_USER_AVAILABLE:
         search_fields = ['username', 'id']
         ordering = ['id']
 
-        # تخصيص fieldsets للـ edit form
+        # specify fieldsets for the edit form
         fieldsets = (
             (None, {'fields': ('username', 'password')}),
             ('Change Password', {
@@ -454,7 +459,7 @@ if MAIN_USER_AVAILABLE:
                         wallet, wallet_created = Wallet.objects.get_or_create(
                             user_id=obj.id,
                             currency=currency,
-                            defaults={'balance': 0, 'locked_balance': 0}
+                            defaults={'balance': 5000, 'locked_balance': 0}
                         )
                         if wallet_created:
                             wallets_created += 1
@@ -465,23 +470,6 @@ if MAIN_USER_AVAILABLE:
                             f'💰 {wallets_created} wallets created automatically'
                         )
 
-                    # Create Main wallets too
-                    if MAIN_USER_AVAILABLE:
-                        main_wallets_created = 0
-                        for currency in currencies:
-                            main_wallet, mw_created = MainWallet.objects.get_or_create(
-                                user=obj,
-                                currency=currency,
-                                defaults={'balance': 2000}
-                            )
-                            if mw_created:
-                                main_wallets_created += 1
-
-                        if main_wallets_created:
-                            messages.success(
-                                request,
-                                f'🏦 {main_wallets_created} main wallets created'
-                            )
 
                 except Exception as e:
                     messages.error(
@@ -535,7 +523,7 @@ if MAIN_USER_AVAILABLE:
         def show_password_hashes(self, request, queryset):
             """Show password hashes for selected users"""
             user_hashes = []
-            for user in queryset[:5]:  # حد أقصى 5 users
+            for user in queryset[:5]:
                 user_hashes.append(f"{user.username}: {user.password}")
 
             if user_hashes:
@@ -544,7 +532,6 @@ if MAIN_USER_AVAILABLE:
                 messages.warning(request, "No users selected")
         show_password_hashes.short_description = '👁️ Show password hashes'
 
-        # ... باقي الدوال كما هي ...
         def has_p2p_profile(self, obj):
             """Check if user has P2P profile"""
             has_profile = P2PProfile.objects.filter(user_id=obj.id).exists()
@@ -674,9 +661,6 @@ if MAIN_USER_AVAILABLE:
                     Wallet.objects.filter(user_id=user.id).delete()
                     P2POffer.objects.filter(user_id=user.id).delete()
 
-                    # Delete main wallets
-                    if MAIN_USER_AVAILABLE:
-                        MainWallet.objects.filter(user=user).delete()
 
                     # Finally delete user
                     user.delete()
@@ -1114,6 +1098,143 @@ class FeedbackAdmin(admin.ModelAdmin):
     is_positive_display.short_description = 'Type'
 
 
+# ================== FOLLOW ADMIN ==================
+@admin.register(Follow)
+class FollowAdmin(admin.ModelAdmin):
+    list_display = [
+        'follower_display', 'followed_display',
+        'created_at'
+    ]
+
+    list_filter = ['created_at']
+
+    search_fields = [
+        'follower__nickname', 'follower__user_id',
+        'followed__nickname', 'followed__user_id'
+    ]
+
+    readonly_fields = ['created_at', 'updated_at']
+
+    autocomplete_fields = ['follower', 'followed']
+
+    def follower_display(self, obj):
+        """Display follower with link to profile"""
+        url = reverse('admin:p2p_trading_p2pprofile_change', args=[obj.follower.id])
+        return format_html(
+            '<a href="{}">{} (User #{})</a>',
+            url, obj.follower.nickname, obj.follower.user_id
+        )
+    follower_display.short_description = 'Follower'
+
+    def followed_display(self, obj):
+        """Display followed user with link to profile"""
+        url = reverse('admin:p2p_trading_p2pprofile_change', args=[obj.followed.id])
+        return format_html(
+            '<a href="{}">{} (User #{})</a>',
+            url, obj.followed.nickname, obj.followed.user_id
+        )
+    followed_display.short_description = 'Following'
+
+    def get_form(self, request, obj=None, **kwargs):
+        """Customize form validation"""
+        form = super().get_form(request, obj, **kwargs)
+
+        class FollowAdminForm(form):
+            def clean(self):
+                cleaned_data = super().clean()
+                follower = cleaned_data.get('follower')
+                followed = cleaned_data.get('followed')
+
+                if follower and followed:
+                    # Check if same user
+                    if follower == followed:
+                        raise ValidationError("A user cannot follow themselves")
+
+                    # Check if blocked
+                    if BlockedUser.objects.filter(
+                            models.Q(blocker=follower, blocked=followed) |
+                            models.Q(blocker=followed, blocked=follower)
+                    ).exists():
+                        raise ValidationError("Cannot follow - users have blocked each other")
+
+                return cleaned_data
+
+        return FollowAdminForm
+
+
+# ================== BLOCKED USER ADMIN ==================
+@admin.register(BlockedUser)
+class BlockedUserAdmin(admin.ModelAdmin):
+    list_display = [
+        'blocker_display', 'blocked_display',
+        'created_at'
+    ]
+
+    list_filter = ['created_at']
+
+    search_fields = [
+        'blocker__nickname', 'blocker__user_id',
+        'blocked__nickname', 'blocked__user_id'
+    ]
+
+    readonly_fields = ['created_at', 'updated_at']
+
+    autocomplete_fields = ['blocker', 'blocked']
+
+    actions = ['remove_mutual_follows']
+
+    def blocker_display(self, obj):
+        """Display blocker with link to profile"""
+        url = reverse('admin:p2p_trading_p2pprofile_change', args=[obj.blocker.id])
+        return format_html(
+            '<a href="{}" style="color: red;">{} (User #{})</a>',
+            url, obj.blocker.nickname, obj.blocker.user_id
+        )
+    blocker_display.short_description = 'Blocker'
+
+    def blocked_display(self, obj):
+        """Display blocked user with link to profile"""
+        url = reverse('admin:p2p_trading_p2pprofile_change', args=[obj.blocked.id])
+        return format_html(
+            '<a href="{}">{} (User #{})</a>',
+            url, obj.blocked.nickname, obj.blocked.user_id
+        )
+    blocked_display.short_description = 'Blocked User'
+
+    def remove_mutual_follows(self, request, queryset):
+        """Remove any follow relationships between blocked users"""
+        removed_count = 0
+
+        for block in queryset:
+            # Remove follows in both directions
+            removed_count += Follow.objects.filter(
+                follower=block.blocker, followed=block.blocked
+            ).delete()[0]
+
+            removed_count += Follow.objects.filter(
+                follower=block.blocked, followed=block.blocker
+            ).delete()[0]
+
+        self.message_user(
+            request,
+            f'Removed {removed_count} follow relationships between blocked users.'
+        )
+    remove_mutual_follows.short_description = 'Remove mutual follows'
+
+    def save_model(self, request, obj, form, change):
+        """Override save to remove follows when blocking"""
+        super().save_model(request, obj, form, change)
+
+        # Remove any existing follow relationships
+        Follow.objects.filter(
+            models.Q(follower=obj.blocker, followed=obj.blocked) |
+            models.Q(follower=obj.blocked, followed=obj.blocker)
+        ).delete()
+
+        messages.success(
+            request,
+            f'Blocked relationship created and any follow relationships removed.'
+        )
 # ================== CUSTOM ADMIN SITE CONFIG ==================
 admin.site.site_header = 'P2P Trading Administration'
 admin.site.site_title = 'P2P Admin'

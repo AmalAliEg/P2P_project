@@ -1,7 +1,9 @@
 # p2p_trading/repositories/p2p_profile_repository.py
 import time
 
-from ..models import P2PProfile,Feedback,BlockedUser,P2POrder
+from django.db.models import Q
+
+from ..models import P2PProfile,Feedback,BlockedUser,P2POrder,Follow
 #from ..models.p2p_order_model import P2POrder
 
 from ..helpers import get_or_403, validate_and_raise
@@ -169,16 +171,15 @@ class P2PProfileRepository:
         method.save()
         return method
 
-    """*************************************************************************************************************
-    /*	function name:		    validate_payment_methods_ownership
-    * 	function inputs:	    user id from the payment_method_ids the attri in the offer model
-    * 	function outputs:	    error_message or TRUE
-    * 	function description:	check the ownership of the payment method by the user from the MainDashboard
-    *   call back:              ValidationError() from rest.framework library
-    */
-    *************************************************************************************************************"""
+
     @staticmethod
     def validate_payment_methods_ownership(user_id, payment_ids):
+        """check the ownership of the payment method by the user from the MainDashboard
+        args:
+            user_id: user id
+            payment_ids (list): payment method id
+        return:
+            error_message or TRUE"""
 
         if not payment_ids:
             return True
@@ -221,7 +222,6 @@ class P2PProfileRepository:
         method = get_or_403(PaymentMethods, id=method_id, user_id=profile.user_id)
         method.delete()
         return method
-
 
 
     @staticmethod
@@ -361,9 +361,20 @@ class P2PProfileRepository:
         ).first()
 
 
+
+    @staticmethod
+    def is_blocked(profile1, profile2):
+        """Check if there's a block relationship between two profiles"""
+        return BlockedUser.objects.filter(
+            Q(blocker=profile1, blocked=profile2) |
+            Q(blocker=profile2, blocked=profile1)
+        ).exists()
+
+
     @staticmethod
     def get_blocked_users(profile):
-        return profile.blocking.all()
+        """Get blocked users with related profile data"""
+        return profile.blocking.select_related('blocked').all()
 
     @staticmethod
     def block_user(blocker_profile, blocked_profile):
@@ -377,6 +388,36 @@ class P2PProfileRepository:
         BlockedUser.objects.filter(
             blocker=blocker_profile,
             blocked=blocked_profile
+        ).delete()
+
+    @staticmethod
+    def get_followers(profile):
+        """Get followers with related profile data"""
+        return Follow.objects.filter(
+            followed=profile
+        ).select_related('follower').all()
+
+    @staticmethod
+    def get_following(profile):
+        """Get following users with related profile data"""
+        return Follow.objects.filter(
+            follower=profile
+        ).select_related('followed').all()
+
+    @staticmethod
+    def follow_user(follower_profile, followed_profile):
+        """Create follow relationship"""
+        return Follow.objects.get_or_create(
+            follower=follower_profile,
+            followed=followed_profile
+        )[0]
+
+    @staticmethod
+    def unfollow_user(follower_profile, followed_profile):
+        """Remove follow relationship"""
+        Follow.objects.filter(
+            follower=follower_profile,
+            followed=followed_profile
         ).delete()
 
 

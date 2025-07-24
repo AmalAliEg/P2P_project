@@ -3,9 +3,8 @@
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
-from ..repositories.p2p_profile_repository import P2PProfileRepository
+from ..repositories.p2p_profile_repository import P2PProfileRepository, GET_OR_CREATE_PROFILE
 from ..helpers import validate_and_raise, ORDER_FEEDBACK_RESPONSE
-from ..serializers.p2p_profile_serializer import FeedbackSerializer
 
 
 class P2PProfileService:
@@ -158,29 +157,65 @@ class P2PProfileService:
 
 
     @staticmethod
-    def get_blocked_users( id):
-        pass
+    def get_blocked_users( user_id):
+        profile = GET_OR_CREATE_PROFILE(user_id)
+        return P2PProfileRepository.get_blocked_users(profile)
 
     @staticmethod
-    def block_user( id, param):
-        pass
+    def block_user( blocker_id, blocked_id):
+        validate_and_raise(
+            blocker_id == blocked_id,
+            "Cannot block yourself"
+        )
+
+        blocker_profile = GET_OR_CREATE_PROFILE(blocker_id)
+        blocked_profile = GET_OR_CREATE_PROFILE(blocked_id)
+
+        # Remove any existing follow relationships
+        P2PProfileRepository.unfollow_user(blocker_profile, blocked_profile)
+        P2PProfileRepository.unfollow_user(blocked_profile, blocker_profile)
+
+        return P2PProfileRepository.block_user(blocker_profile, blocked_profile)
 
     @staticmethod
-    def unblock_user(id, param):
-        pass
+    def unblock_user(blocker_id, blocked_id):
+        blocker_profile = GET_OR_CREATE_PROFILE(blocker_id)
+        blocked_profile = GET_OR_CREATE_PROFILE(blocked_id)
+
+        P2PProfileRepository.unblock_user(blocker_profile, blocked_profile)
 
     @staticmethod
-    def get_followers( pk):
-        pass
+    def get_followers( user_id):
+        profile = GET_OR_CREATE_PROFILE(user_id)
+        return P2PProfileRepository.get_followers(profile)
 
     @staticmethod
-    def get_following( pk):
-        pass
+    def get_following( user_id):
+        profile = GET_OR_CREATE_PROFILE(user_id)
+        return P2PProfileRepository.get_following(profile)
 
     @staticmethod
-    def follow_user( id, param):
-        pass
+    def follow_user( follower_id, followed_id):
+        validate_and_raise(
+            follower_id == followed_id,
+            "Cannot follow yourself"
+        )
+
+        follower_profile = GET_OR_CREATE_PROFILE(follower_id)
+        followed_profile = GET_OR_CREATE_PROFILE(followed_id)
+
+        # Check if blocked (from either side)
+        is_blocked = P2PProfileRepository.is_blocked(follower_profile, followed_profile)
+        validate_and_raise(
+            is_blocked,
+            "Cannot follow this user due to blocking"
+        )
+
+        return P2PProfileRepository.follow_user(follower_profile, followed_profile)
 
     @staticmethod
-    def unfollow_user( id, param):
-        pass
+    def unfollow_user( follower_id, followed_id):
+        follower_profile = GET_OR_CREATE_PROFILE(follower_id)
+        followed_profile = GET_OR_CREATE_PROFILE(followed_id)
+
+        P2PProfileRepository.unfollow_user(follower_profile, followed_profile)

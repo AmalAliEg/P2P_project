@@ -10,12 +10,9 @@ from ..services.p2p_wallet_service import WalletService
 # ================ HELPER MACROS ================
 
 from ..helpers import (
-    VALIDATE_AMOUNT,
     GET_CURRENCY,
-    GET_AMOUNT,
     handle_exception,
     success_response,
-    error_response,
 
 )
 from ..decorator.swagger_decorator import swagger_serializer_mapping
@@ -41,6 +38,11 @@ class P2PWalletController(viewsets.ViewSet):
         serializer = WalletBalanceSerializer(wallet)
         return success_response(serializer.data)
 
+
+
+
+
+'''
     @action(detail=False, methods=['post'], url_path='transfer-in')
     @handle_exception
     def transfer_in(self, request):
@@ -62,7 +64,7 @@ class P2PWalletController(viewsets.ViewSet):
             "new_balance": str(wallet.balance)
         })
 
-
+'''
 
 
 

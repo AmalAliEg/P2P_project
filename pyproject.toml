@@ -1,0 +1,6 @@
+# pyproject.toml
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "configurations.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+testpaths = ["p2p_trading/tests"]
+addopts = "--reuse-db -v"

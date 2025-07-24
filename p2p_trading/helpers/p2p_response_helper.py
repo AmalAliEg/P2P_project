@@ -16,7 +16,7 @@ def success_response(data=None, message=None, count=None, status_code=status.HTT
     return Response(response, status=status_code)
 
 def error_response(error, status_code=status.HTTP_400_BAD_REQUEST, details=None):
-    """Macro للاستجابات الخاطئة"""
+    """to detect the error and return an error response"""
     response = {"success": False, "error": str(error)}
     if details:
         response["details"] = details

@@ -9,7 +9,7 @@ from ..services.p2p_profile_service import P2PProfileService
 from ..serializers.p2p_profile_serializer import (
     P2PProfileOverviewSerializer, P2PProfileUpdateSerializer,
     PaymentMethodCreateSerializer,
-    PaymentMethodSerializer,FeedbackCreateSerializer, FeedbackSerializer,BlockUserSerializer
+    PaymentMethodSerializer,FeedbackCreateSerializer, FeedbackSerializer,BlockFollowUserSerializer
 )
 from ..helpers import handle_exception,success_response
 
@@ -23,7 +23,14 @@ from ..decorator.swagger_decorator import swagger_serializer_mapping
     add_payment_method='PaymentMethodCreateSerializer',
     update_payment_method='PaymentMethodSerializer',
     list_feedback='FeedbackSerializer',
-    add_feedback='FeedbackCreateSerializer'
+    add_feedback='FeedbackCreateSerializer',
+    list_blocked_users='BlockFollowUserSerializer',
+    block_user='BlockFollowUserSerializer',
+    unblock_user='BlockFollowUserSerializer',
+    list_followers='BlockFollowUserSerializer',
+    list_following='BlockFollowUserSerializer',
+    follow_user='BlockFollowUserSerializer',
+    unfollow_user='BlockFollowUserSerializer',
 )
 
 class P2PProfileController(viewsets.ViewSet):
@@ -240,7 +247,7 @@ class P2PProfileController(viewsets.ViewSet):
         """
         POST /api/p2p/profiles/block-user/
         """
-        serializer = BlockUserSerializer(data=request.data)
+        serializer = BlockFollowUserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         self.service.block_user(
@@ -256,7 +263,7 @@ class P2PProfileController(viewsets.ViewSet):
         """
         POST /api/p2p/profiles/unblock-user/
         """
-        serializer = BlockUserSerializer(data=request.data)
+        serializer = BlockFollowUserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         self.service.unblock_user(
@@ -268,13 +275,13 @@ class P2PProfileController(viewsets.ViewSet):
 
     # ================ Follows ================
 
-    @action(detail=True, methods=['get'], url_path='followers')
+    @action(detail=False, methods=['get'], url_path='followers')
     @handle_exception
-    def list_followers(self, request, pk=None):
+    def list_followers(self, request):
         """
         GET /api/p2p/profiles/{user_id}/followers/
         """
-        followers = self.service.get_followers(pk)
+        followers = self.service.get_followers(request.user.id)
         data = [
             {
                 'user_id': follow.follower.user_id,
@@ -285,13 +292,13 @@ class P2PProfileController(viewsets.ViewSet):
         ]
         return success_response(data)
 
-    @action(detail=True, methods=['get'], url_path='following')
+    @action(detail=False, methods=['get'], url_path='following')
     @handle_exception
-    def list_following(self, request, pk=None):
+    def list_following(self, request):
         """
         GET /api/p2p/profiles/{user_id}/following/
         """
-        following = self.service.get_following(pk)
+        following = self.service.get_following(request.user.id)
         data = [
             {
                 'user_id': follow.followed.user_id,
@@ -308,7 +315,7 @@ class P2PProfileController(viewsets.ViewSet):
         """
         POST /api/p2p/profiles/follow/
         """
-        serializer = BlockUserSerializer(data=request.data)  # نفس الـ serializer
+        serializer = BlockFollowUserSerializer(data=request.data)  # نفس الـ serializer
         serializer.is_valid(raise_exception=True)
 
         self.service.follow_user(
@@ -324,7 +331,7 @@ class P2PProfileController(viewsets.ViewSet):
         """
         POST /api/p2p/profiles/unfollow/
         """
-        serializer = BlockUserSerializer(data=request.data)
+        serializer = BlockFollowUserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         self.service.unfollow_user(

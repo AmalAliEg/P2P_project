@@ -18,14 +18,7 @@ class P2POfferRepository:
     #filter according to the is_deleted , all records that not deleted from the database, status active
     PUBLIC_QUERY = NON_DELETED_OFFERS.filter(status=OfferStatus.ACTIVE, available_amount__gt=0)
 
-    """*************************************************************************************************************
-      /*	function name:		    create_offer
-      * 	function inputs:	    validated_data 
-      * 	function outputs:	    instance of the offer model (the new offer ) 
-      * 	function description:	access dirctly the model to create the data 
-      *     call back:              n/a
-      */
-    *************************************************************************************************************"""
+
     @staticmethod
     def create_offer(data):
         return P2POffer.objects.create(**data)

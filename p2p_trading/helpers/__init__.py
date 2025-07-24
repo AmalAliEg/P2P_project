@@ -22,7 +22,7 @@ from .p2p_macro_helpers import (
     get_or_403,
     parse_date,
 
-    format_price,
+    #format_price,
     get_counterparty_id,
     get_trade_type,
     format_fiat,
@@ -38,9 +38,7 @@ from .p2p_macro_helpers import (
     GET_SELLER_BUYER,
     VALIDATE_BALANCE,
 
-    VALIDATE_AMOUNT,
     GET_CURRENCY,
-    GET_AMOUNT,
     CREATE_WALLET,
 
     FORMAT_PERCENTAGE,
@@ -75,7 +73,6 @@ __all__ = [
     'get_or_403',
     'parse_date',
 
-    'format_price',
     'get_counterparty_id',
     'get_trade_type',
     'format_fiat',
@@ -97,9 +94,7 @@ __all__ = [
     'VALIDATE_BALANCE',
     'CREATE_WALLET',
 
-    'VALIDATE_AMOUNT',
     'GET_CURRENCY',
-    'GET_AMOUNT',
     'ORDER_FEEDBACK_RESPONSE',
     'FORMAT_MY_FEEDBACK',
     'FORMAT_THEIR_FEEDBACK',

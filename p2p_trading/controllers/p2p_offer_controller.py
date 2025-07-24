@@ -1,7 +1,7 @@
 # p2p_trading/controllers/p2p_offer_controller.py
 from django.db import transaction
 from rest_framework import viewsets, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.decorators import action
 
 from ..services.p2p_offer_service import P2POfferService
@@ -37,42 +37,35 @@ class P2POfferController(viewsets.ViewSet):
     #common object from the class, thus all function can use it
     service = P2POfferService()
 
-    """*************************************************************************************************************
-    /*	function name:		    create
-    * 	function inputs:	    request from the front end 
-    * 	function outputs:	
-    * 	function description:	create new offer 
-    *   call back:              create_offer(),  P2POfferCreateSerializer()
-    * 	API format:             POST: /api/p2p/offers/
-    */
-    *************************************************************************************************************"""
+
     @handle_exception
     @transaction.atomic
     def create(self, request):
+        """
+        endpoint to create a new offer
 
+        API format:
+            POST: /api/p2p/offers/
+
+        """
 
         #instance from the offer model
-
         offer = self.service.create_offer(user_id=request.user.id, data=request.data)
         #instance of the P2POfferCreateSerializer
         serializer = P2POfferCreateSerializer(offer)
         return success_response(serializer.data, status_code=status.HTTP_201_CREATED)
 
-    """*************************************************************************************************************
-    /*	function name:		list
-    * 	function inputs:	request from the front end 
-    * 	function outputs:	
-    * 	function description:	list my offers of the user in the front end page according to filters 
-                                ['status', 'type', 'asset_type', 'start_date', 'end_date']
-    *   call back:              get_user_offers(),  get_payment_methods_for_offers()
-    * 	API format:     GET: /api/p2p/offers/
-                        GET: /api/p2p/offers/?status=active&type=buy
-                        GET: /api/p2p/offers/?status=active&type=sell&asset_type=USDT
-                        etc
-    */
-    *************************************************************************************************************"""
     @handle_exception
     def list(self, request):
+        """
+        list my offers of the user in the front end page according to filters
+                                ['status', 'type', 'asset_type', 'start_date', 'end_date']
+        API format:
+            GET: /api/p2p/offers/
+            GET: /api/p2p/offers/?status=active&type=buy
+            GET: /api/p2p/offers/?status=active&type=sell&asset_type=USDT
+            etc
+        """
         # apply filters from the frontend url
         filters = extract_filters(request.query_params,
                                   ['status', 'type', 'asset_type', 'start_date', 'end_date'])
@@ -91,33 +84,25 @@ class P2POfferController(viewsets.ViewSet):
         count = offers.count() if hasattr(offers, 'count') else len(offers)
         return success_response(data=serializer.data, count=count)
 
-    """*************************************************************************************************************
-    /*	function name:		    retrieve
-    * 	function inputs:	    request from the front end 
-    * 	function outputs:	
-    * 	function description:	in each reactangle in the front end it show the details of the offer 
-    *   call back:              get_offer_detail(),  P2POfferDetailSerializer()
-    * 	API format:             GET: /api/p2p/offers/{order_id}
-    */
-    *************************************************************************************************************"""
     @handle_exception
     def retrieve(self, request, pk=None):
+        """
+        endpoint responsible to get the data each offer's reactangle in the front end it show the details of the offer
+        API format:
+            GET: /api/p2p/offers/{order_id}
+        """
         offer = self.service.get_offer_detail(user_id=request.user.id, offer_id=pk)
         serializer = P2POfferDetailSerializer(offer)
         return success_response(serializer.data)
 
-    """*************************************************************************************************************
-    /*	function name:		    update 
-    * 	function inputs:	    request from the front end 
-    * 	function outputs:	
-    * 	function description:	update exist offer 
-    *   call back:              update_offer(),  P2POfferDetailSerializer()
-    * 	API format:             PUT: /api/p2p/offers/{order_id}
-                                PATCH: /api/p2p/offers/
-    */
-    *************************************************************************************************************"""
     @handle_exception
     def update(self, request, pk=None):
+        """
+        endpoint to update all the fileds or speciic fields
+        API format:
+            PUT: /api/p2p/offers/{order_id}
+            PATCH: /api/p2p/offers/
+        """
         #pass the data to serializer
         serializer = OfferStatusUpdateSerializer(data=request.data,partial=True)
         #validate the data
@@ -140,37 +125,26 @@ class P2POfferController(viewsets.ViewSet):
         return success_response(response_serializer.data)
 
 
-    """*************************************************************************************************************
-    /*	function name:		    destroy 
-    * 	function inputs:	    request from the front end 
-    * 	function outputs:	    n/a
-    * 	function description:	DELETE exist offer 
-    *   call back:              delete_offer()
-    * 	API format:             DELETE: /api/p2p/offers/{order_id}
-    */
-    *************************************************************************************************************"""
     @handle_exception
     def destroy(self, request, pk=None):
+        """API format:
+            DELETE: /api/p2p/offers/{order_id}"""
+
         self.service.delete_offer(user_id=request.user.id, offer_id=pk)
         return success_response(message="Offer deleted successfully",
-                                status_code=status.HTTP_204_NO_CONTENT)
+                                    status_code=status.HTTP_204_NO_CONTENT)
 
 
-    """*************************************************************************************************************
-    /*	function name:		    public_offers 
-    * 	function inputs:	    request from the front end 
-    * 	function outputs:	    n/a
-    * 	function description:	list all the public offers 
-    *   call back:              get_public_offers(),P2POfferPublicSerializer()
-    * 	API format:             GET: /api/p2p/offers//public_offers/
-                                GET: /api/p2p/offers//public_offers/?trade_type='BUY'
-                                GET: /api/p2p/offers//public_offers/?trade_type='BUY'&fiat_currency='EGP'
-                                etc
-    */
-    *************************************************************************************************************"""
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'],permission_classes=[AllowAny])
     @handle_exception
     def public_offers(self, request):
+        """endpoint to	list all the public offers
+        API format:
+            GET: /api/p2p/offers//public_offers/
+            GET: /api/p2p/offers//public_offers/?trade_type='BUY'
+            GET: /api/p2p/offers//public_offers/?trade_type='BUY'&fiat_currency='EGP'
+            etc
+        """
         # apply filters from the front end
         filters = extract_filters(request.query_params,
                                   ['trade_type', 'crypto_currency', 'fiat_currency', 'payment_method'])
@@ -179,5 +153,6 @@ class P2POfferController(viewsets.ViewSet):
         serializer = P2POfferPublicSerializer(offers, many=True)
 
         return success_response(data=serializer.data, count=len(serializer.data))
+
 
 

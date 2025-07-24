@@ -15,4 +15,6 @@ __all__ = ['BlockedUser',
            'P2POrder',
            'Feedback',
            'Follow',
-           ]
+           'P2POffer',
+           'BlockedUser',]
+

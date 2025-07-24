@@ -59,31 +59,29 @@ class OfferValidator:
         )
 
 
-    """*************************************************************************************************************
-    need to review 
-    /*	function name:		    validate_balance_for_sell
-    * 	function inputs:	    user id , validated data
-    * 	function outputs:	    True or error-message
-    * 	function description:	check that the seller has the suffient crypto amount in his wallet
-    *   call back:              get_or_create_wallet(), 
-    */
-    *************************************************************************************************************"""
     @staticmethod
     def validate_balance_for_sell(user_id, data):
-        """if the trade type is BUY no need to validate it mean that the user is buyer, will pay fiat"""
-        from ..services.p2p_wallet_service import WalletService
+        """method to check that the seller has the suffient crypto amount in his wallet
+        args:
+            - user_id: user id
+            - data: user data
+        return:
+            True or error-message
+        """
 
+        from ..services.p2p_wallet_service import WalletService
+        #if the trade type is BUY no need to validate it mean that the user is buyer, will pay fiat
         if data.get('trade_type') != TradeType.SELL:
             return
         #get the data from the wallet of the user since he is the seller
         wallet = WalletService.get_or_create_wallet(user_id,
-                                                    data.get('currency')
+                                                    data.get('crypto_currency')
                                                     )
         #get the total amount added by the user
         amount = Decimal(str(data.get('total_amount',0)))
         if wallet.balance < amount:
             validate_and_raise(wallet.balance < amount,
-                               f'your balance {WalletService.get_or_create_wallet(data.get('currency'))} it less than the total amount '
+                               f'your balance WalletService.get_or_create_wallet {data.get('crypto_currency')} it less than the total amount {amount}'
                                )
 
 

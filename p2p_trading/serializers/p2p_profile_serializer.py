@@ -94,14 +94,11 @@ class FeedbackCreateSerializer(serializers.Serializer):
 
 
 
-class BlockUserSerializer(serializers.Serializer):
+class BlockFollowUserSerializer(serializers.Serializer):
     """Serializer for blocking users"""
     user_id = serializers.IntegerField()
 
 
-class FollowUserSerializer(serializers.Serializer):
-    """Serializer for blocking users"""
-    user_id = serializers.IntegerField()
 
 
 

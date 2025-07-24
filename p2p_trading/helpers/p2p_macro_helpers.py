@@ -18,9 +18,7 @@ GET_CONTEXT = lambda self: {'request': self.request}
 # ================ HELPER MACROS WALLET CONTROLLERS================
 
 # Macros
-VALIDATE_AMOUNT = lambda amount: amount > 0
 GET_CURRENCY = lambda request, default='USDT': request.query_params.get('currency', default)
-GET_AMOUNT = lambda data: Decimal(data.get('amount', 0))
 
 
 
@@ -121,7 +119,7 @@ get_counterparty_id = lambda obj, user_id: obj.taker_id if obj.maker_id == user_
 get_trade_type = lambda obj, user_id: obj.trade_type if obj.taker_id == user_id else ('Sell' if obj.trade_type == 'BUY' else 'Buy')
 
 # Format Helpers
-format_price = lambda price, currency='EGP': f"{price:.2f} {currency}"
+#format_price = lambda price, currency='EGP': f"{price:.2f} {currency}"
 format_crypto = lambda amount, currency: f"{amount:.8f} {currency}"
 format_fiat = lambda amount, currency: f"{amount:.2f} {currency}"
 
