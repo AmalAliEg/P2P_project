@@ -48,6 +48,7 @@ h11==0.16.0
 httplib2==0.20.4
 idna==3.6
 inflection==0.5.1
+iniconfig==2.1.0
 itsdangerous==2.1.2
 Jinja2==3.1.2
 jsonpatch==1.32
@@ -71,6 +72,7 @@ packaging==24.0
 pbr==5.11.1
 pexpect==4.9.0
 pillow==10.2.0
+pluggy==1.6.0
 psutil==5.9.8
 psycopg2==2.9.9
 ptyprocess==0.7.0
@@ -95,6 +97,8 @@ pyserial==3.5
 PySide6 @ file:///home/molly/PySide6-6.9.0-cp39-abi3-manylinux_2_28_x86_64.whl#sha256=09239d1b808f18efccd3803db874d683917efcdebfdf0e8dec449cf50e74e7aa
 PySide6_Addons==6.9.0
 PySide6_Essentials==6.9.0
+pytest==8.4.1
+pytest-django==4.11.1
 python-apt==2.7.7+ubuntu4
 python-dateutil==2.8.2
 python-debian==0.1.49+ubuntu2

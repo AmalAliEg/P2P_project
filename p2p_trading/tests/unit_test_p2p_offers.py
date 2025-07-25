@@ -1,4 +1,4 @@
-# tests/test_p2p_offers.py
+# tests/unit_test_p2p_offers.py
 import pytest
 from decimal import Decimal
 from django.contrib.auth import get_user_model
