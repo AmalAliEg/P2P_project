@@ -61,27 +61,27 @@ class P2POffer(BaseModel):
         app_label = 'p2p_trading'
         constraints = [
             models.CheckConstraint(
-                check=models.Q(price__gt=0),
+                condition=models.Q(price__gt=0),
                 name='price_must_be_positive'
             ),
             models.CheckConstraint(
-                check=models.Q(total_amount__gt=0),
+                condition=models.Q(total_amount__gt=0),
                 name='total_amount_must_be_positive'
             ),
             models.CheckConstraint(
-                check=models.Q(available_amount__gte=0),
+                condition=models.Q(available_amount__gte=0),
                 name='available_amount_non_negative'
             ),
             models.CheckConstraint(
-                check=models.Q(min_order_limit__gt=0),
+                condition=models.Q(min_order_limit__gt=0),
                 name='min_order_limit_positive'
             ),
             models.CheckConstraint(
-                check=models.Q(max_order_limit__gte=models.F('min_order_limit')),
+                condition=models.Q(max_order_limit__gte=models.F('min_order_limit')),
                 name='max_limit_gte_min_limit'
             ),
             models.CheckConstraint(
-                check=models.Q(available_amount__lte=models.F('total_amount')),
+                condition=models.Q(available_amount__lte=models.F('total_amount')),
                 name='available_lte_total'
             ),]
 

@@ -1,6 +1,8 @@
 # p2p_trading/serializers/p2p_order_serializer.py
 
 from rest_framework import serializers
+
+from ..helpers.p2p_macro_helpers import format_price
 from ..models.p2p_order_model import P2POrder
 from ..models.p2p_profile_models import P2PProfile
 from ..constants.constant import STATUS_MAP
@@ -63,4 +65,53 @@ class P2POrderListSerializer(serializers.ModelSerializer):
         return STATUS_MAP.get(obj.status, {'text': obj.status, 'class': 'default'})
 
 
+#====================PNL ===========================
+class PNLStatementSerializer(serializers.Serializer):
+    """Serializer لبيان الأرباح والخسائر"""
+    coin = serializers.CharField()
+
+    # بيانات الشراء
+    buy_orders = serializers.IntegerField()
+    buy_avg_price = serializers.SerializerMethodField()
+    buy_total_crypto = DECIMAL_FIELD(20, 8, 0)
+    buy_total_fiat = DECIMAL_FIELD(20, 2, 0)
+
+    # بيانات البيع
+    sell_orders = serializers.IntegerField()
+    sell_avg_price = serializers.SerializerMethodField()
+    sell_total_crypto = DECIMAL_FIELD(20, 8, 0)
+    sell_total_fiat = DECIMAL_FIELD(20, 2, 0)
+
+    # الرسوم والأرباح
+    total_txn_fee = DECIMAL_FIELD(20, 8, 0)
+    profit_loss = serializers.SerializerMethodField()
+
+    def get_buy_avg_price(self, obj):
+        """متوسط سعر الشراء مع العملة"""
+        return format_price(obj.get('buy_avg_price', 0))
+
+    def get_sell_avg_price(self, obj):
+        """متوسط سعر البيع مع العملة"""
+        return format_price(obj.get('sell_avg_price', 0))
+
+    def get_profit_loss(self, obj):
+        """حساب الربح/الخسارة المحققة"""
+        # Extract values with defaults
+        sell_total = obj.get('sell_total_fiat', 0)
+        buy_total = obj.get('buy_total_fiat', 0)
+        sell_crypto = obj.get('sell_total_crypto', 0)
+        buy_crypto = obj.get('buy_total_crypto', 0)
+        fees = obj.get('total_txn_fee', 0)
+
+        # Check if PnL calculation is applicable
+        if not (sell_total and buy_total):
+            return "N/A"
+
+        # Calculate PnL
+        min_crypto = min(sell_crypto, buy_crypto)
+        avg_buy = buy_total / buy_crypto if buy_crypto else 0
+        avg_sell = sell_total / sell_crypto if sell_crypto else 0
+        pnl = (avg_sell - avg_buy) * min_crypto - (fees * avg_sell)
+
+        return f"{pnl:+.2f} EGP"
 

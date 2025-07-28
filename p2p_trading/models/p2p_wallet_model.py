@@ -29,15 +29,15 @@ class Wallet(BaseModel):
         unique_together = ('user_id', 'currency')
         constraints = [
             models.CheckConstraint(
-                check=models.Q(balance__gte=0),
+                condition=models.Q(balance__gte=0),
                 name='wallet_balance_non_negative'
             ),
             models.CheckConstraint(
-                check=models.Q(locked_balance__gte=0),
+                condition=models.Q(locked_balance__gte=0),
                 name='wallet_locked_balance_non_negative'
             ),
             models.CheckConstraint(
-                check=models.Q(locked_balance__lte=models.F('balance')),
+                condition=models.Q(locked_balance__lte=models.F('balance')),
                 name='locked_lte_balance'
             ),
         ]

@@ -22,7 +22,7 @@ class P2PProfile(BaseModel):
         ordering = ['-total_30d_trades']
         constraints = [
         models.CheckConstraint(
-            check=models.Q(user_id__gt=0),
+            condition=models.Q(user_id__gt=0),
             name='valid_user_id'
         ),
         ]

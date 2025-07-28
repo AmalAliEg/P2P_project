@@ -1,18 +1,23 @@
 # p2p_trading/repositories/p2p_order_repository.py
 
 from django.db import transaction
-from rest_framework.exceptions import NotFound
+from django.db.models.functions import Coalesce
 
 from ..models.p2p_order_model import P2POrder
 from ..models.p2p_offer_model import P2POffer
-from ..constants.constant import  OfferStatus
+from ..constants.constant import OfferStatus, OrderStatus
 
+from django.db.models import Count, Sum, Value, DecimalField
+from django.utils import timezone
+from datetime import timedelta
 
 # ================ HELPER MACROS ================
 from ..helpers import (ORDER_FILTER_MAP,
                        STATUS_TIME_FIELDS,
                        USER_FILTER,
-                       get_or_403
+                       get_or_403,
+                       buy_filter,
+                       sell_filter
                        )
 
 
@@ -137,6 +142,84 @@ class P2POrderRepository:
         print(f"Order saved successfully. New status: {order.status}")  # debugging
 
         return order
+
+
+
+    @staticmethod
+    def get_pnl_statement_data(user_id, filters):
+        """get the data for the profile and losing statements"""
+        completed_orders = P2POrder.objects.select_related('offer').filter(
+            USER_FILTER(user_id),
+            status=OrderStatus.COMPLETED
+        )
+        completed_orders = completed_orders.only(
+            'fiat_amount', 'crypto_amount', 'transaction_fee',
+            'crypto_currency', 'maker_id', 'taker_id', 'trade_type'
+        )
+
+        # limited and filter to the last 90 days
+        if not filters.get('date_from'):
+            completed_orders = completed_orders.filter(
+                created_at__gte=timezone.now() - timedelta(days=90)
+            )
+
+        # apply filters
+        for key in ['coin', 'date_from', 'date_to']:
+            if key in filters:
+                completed_orders = ORDER_FILTER_MAP[key](completed_orders, filters.get(key))
+
+        # collect the data
+        pnl_data = completed_orders.values('crypto_currency').annotate(
+            # عمليات الشراء
+            buy_orders=Count('id', filter=buy_filter(user_id)),
+
+            buy_total_fiat=Coalesce(Sum('fiat_amount',
+                                    filter=buy_filter(user_id)),
+                                    Value(0, output_field=DecimalField())),
+
+            buy_total_crypto=Coalesce(Sum('crypto_amount',
+                                    filter=buy_filter(user_id)),
+                                    Value(0, output_field=DecimalField())),
+
+            # ٍSell orders
+            sell_orders=Count('id', filter=sell_filter(user_id)),
+            sell_total_fiat=Coalesce(Sum('fiat_amount',
+                                    filter=sell_filter(user_id)),
+                                    Value(0, output_field=DecimalField())),
+
+            sell_total_crypto=Coalesce(Sum('crypto_amount',
+                                    filter=sell_filter(user_id)),
+                                    Value(0, output_field=DecimalField())),
+
+            # the transaction fees
+            total_txn_fee=Coalesce(Sum('transaction_fee'),
+                                   Value(0, output_field=DecimalField()))
+        ).order_by('crypto_currency')
+
+        # analysis of the data
+        result_list = []
+        for item in pnl_data:
+            # calculate the mean values
+            buy_total_fiat = item.get('buy_total_fiat') or 0
+            buy_total_crypto = item.get('buy_total_crypto') or 0
+            sell_total_fiat = item.get('sell_total_fiat') or 0
+            sell_total_crypto = item.get('sell_total_crypto') or 0
+
+
+            item['buy_total_fiat'] = buy_total_fiat
+            item['buy_total_crypto'] = buy_total_crypto
+            item['sell_total_fiat'] = sell_total_fiat
+            item['sell_total_crypto'] = sell_total_crypto
+            item['total_txn_fee'] = item.get('total_txn_fee') or 0
+
+            item['buy_avg_price'] = buy_total_fiat / buy_total_crypto if buy_total_crypto else 0
+            item['sell_avg_price'] = sell_total_fiat / sell_total_crypto if sell_total_crypto else 0
+            item['coin'] = item.pop('crypto_currency')
+
+            result_list.append(item)
+
+        return result_list
+
 
 
     """it will be used for the chat"""

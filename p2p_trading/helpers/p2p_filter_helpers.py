@@ -38,6 +38,11 @@ FILTER_MAPPING = {
 # filter if the user is taker or the maker for the order
 USER_FILTER = lambda user_id: Q(maker_id=user_id) | Q(taker_id=user_id)
 
+def buy_filter(user_id):
+    return Q(maker_id=user_id, offer__trade_type='BUY') | Q(taker_id=user_id, trade_type='BUY')
+
+def sell_filter(user_id):
+    return Q(maker_id=user_id, offer__trade_type='SELL') | Q(taker_id=user_id, trade_type='SELL')
 
 ORDER_FILTER_MAP = {
     'coin': lambda q, v: q.filter(crypto_currency=v.upper()) if v and v != 'All coins' else q,

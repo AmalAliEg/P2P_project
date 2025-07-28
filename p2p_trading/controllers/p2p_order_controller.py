@@ -4,8 +4,13 @@ from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django_ratelimit.decorators import ratelimit
+
+
 from ..services.p2p_order_service import P2POrderService
-from ..serializers.p2p_order_serializer import P2POrderListSerializer
+from ..serializers.p2p_order_serializer import P2POrderListSerializer,PNLStatementSerializer
 
 from ..decorator.swagger_decorator import swagger_serializer_mapping
 
@@ -160,6 +165,26 @@ class P2POrderController(viewsets.ViewSet):
         )
 
 
+
+    # get the pnl_statement
+    @method_decorator(ratelimit(key='user', rate='10/m'))  # 10 requests per minute
+    @method_decorator(cache_page(60))  # Cache response for 1 minute
+    @action(detail=False, methods=['get'],url_path='pnl-statement')
+    def pnl_statement(self, request):
+        filters = {
+            'coin': request.query_params.get('coin'),
+            'date_from': request.query_params.get('date_from'),
+            'date_to': request.query_params.get('date_to'),
+        }
+
+        data = P2POrderService.get_pnl_statement(request.user.id, filters)
+        serializer = PNLStatementSerializer(data, many=True)
+
+        return success_response(
+            data=serializer.data,
+            message="P&L statement retrieved successfully",
+            count=len(serializer.data)
+        )
 
 
 

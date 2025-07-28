@@ -3,6 +3,7 @@
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
+from django.core.cache import cache
 
 from ..constants.constant import OrderStatus, COMPLETED_STATUSES, PROCESSING_STATUSES
 from ..repositories.p2p_offer_repository import P2POfferRepository
@@ -240,3 +241,22 @@ class P2POrderService:
             raise PermissionDenied("You don't have permission to view this order")
 
         return order
+
+
+    @staticmethod
+    def get_pnl_statement(user_id, filters):
+        # Cache key with short term expiry
+        cache_key = f"pnl_{user_id}_{hash(frozenset(filters.items()))}"
+
+        # Check cache first
+        cached = cache.get(cache_key)
+        if cached:
+            return cached
+
+        # Get from DB
+        data = P2POrderRepository.get_pnl_statement_data(user_id, filters)
+
+        # Cache for 5 minutes
+        cache.set(cache_key, data, 300)
+
+        return data

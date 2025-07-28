@@ -36,25 +36,30 @@ class P2POrder(BaseModel):
         ordering = ['-created_at']
         constraints = [
             models.CheckConstraint(
-                check=models.Q(crypto_amount__gt=0),
+                condition=models.Q(crypto_amount__gt=0),
                 name='order_crypto_amount_positive'
             ),
             models.CheckConstraint(
-                check=models.Q(fiat_amount__gt=0),
+                condition=models.Q(fiat_amount__gt=0),
                 name='order_fiat_amount_positive'
             ),
             models.CheckConstraint(
-                check=models.Q(price__gt=0),
+                condition=models.Q(price__gt=0),
                 name='order_price_positive'
             ),
             models.CheckConstraint(
-                check=~models.Q(maker_id=models.F('taker_id')),
+                condition=~models.Q(maker_id=models.F('taker_id')),
                 name='maker_taker_different'
             ),
             models.CheckConstraint(
-                check=models.Q(transaction_fee__gte=0),
+                condition=models.Q(transaction_fee__gte=0),
                 name='transaction_fee_non_negative'
             ),
+        ]
+        indexes = [
+            models.Index(fields=['maker_id', 'status', 'created_at']),
+            models.Index(fields=['taker_id', 'status', 'created_at']),
+            models.Index(fields=['status', 'crypto_currency', 'created_at']),
         ]
 
 
